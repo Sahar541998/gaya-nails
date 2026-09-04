@@ -5,6 +5,17 @@ import { z } from "zod";
 const emptyToUndefined = (value: unknown) =>
   value === "" || value === undefined ? undefined : value;
 
+function firstNonEmpty(
+  ...values: readonly (string | undefined)[]
+): string | undefined {
+  for (const value of values) {
+    if (value !== undefined && value !== "") {
+      return value;
+    }
+  }
+  return undefined;
+}
+
 const smsDriverSchema = z.preprocess(
   emptyToUndefined,
   z.enum(["docker", "twilio"]).default("docker"),
@@ -41,7 +52,10 @@ export type ServerEnv = z.infer<typeof baseSchema> &
 export function getServerEnv(): ServerEnv {
   const base = baseSchema.safeParse({
     SMS_DRIVER: process.env.SMS_DRIVER,
-    DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_URL: firstNonEmpty(
+      process.env.DATABASE_URL,
+      process.env.POSTGRES_URL,
+    ),
   });
 
   if (!base.success) {
@@ -66,16 +80,25 @@ export function getServerEnv(): ServerEnv {
     const parsed = dockerSmsSchema.safeParse({
       SMS_MOCK_URL: process.env.SMS_MOCK_URL,
     });
-    if (!parsed.success) {
-      throw new Error("Missing or invalid SMS_MOCK_URL.");
+    if (parsed.success) {
+      dockerSms = parsed.data;
     }
-    dockerSms = parsed.data;
   }
 
   const supabase = supabaseSchema.safeParse({
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: firstNonEmpty(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_URL,
+    ),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: firstNonEmpty(
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      process.env.SUPABASE_ANON_KEY,
+    ),
+    SUPABASE_SERVICE_ROLE_KEY: firstNonEmpty(
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      process.env.SUPABASE_SECRET_KEY,
+    ),
   });
 
   return {
