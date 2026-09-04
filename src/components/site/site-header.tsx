@@ -54,7 +54,7 @@ export function SiteHeader({
             {copy.bookNow}
           </Link>
           <details className="relative md:hidden">
-            <summary className="cursor-pointer list-none rounded-sm px-2 py-1 text-sm tracking-wide text-ink ring-ink/40 focus-visible:ring-2">
+            <summary className="list-none rounded-sm px-2 py-1 text-sm tracking-wide text-ink ring-ink/40 focus-visible:ring-2">
               {copy.menu}
             </summary>
             <div className="absolute end-0 mt-3 w-44 border border-rose-line bg-cream p-3 shadow-sm">

@@ -29,6 +29,11 @@ button,
 a,
 summary {
   touch-action: manipulation;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 body {
@@ -74,7 +79,6 @@ label:has(:focus-visible) {
 
 .btn-primary:disabled {
   opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -127,6 +131,10 @@ html[lang="he"] .btn-secondary {
 
 details > summary {
   list-style: none;
+}
+
+details:not([open]) > :not(summary) {
+  display: none;
 }
 
 details > summary::-webkit-details-marker {

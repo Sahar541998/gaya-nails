@@ -353,7 +353,7 @@ export function BookingFlow({
                       key={item.id}
                       type="button"
                       aria-pressed={selected}
-                      className={`flex w-full flex-col gap-1 border px-4 py-5 text-start touch-manipulation ${
+                      className={`flex w-full flex-col gap-1 border px-4 py-5 text-start ${
                         selected
                           ? "border-ink bg-blush/70"
                           : "border-rose-line bg-white"
