@@ -13,11 +13,22 @@ create table if not exists public.appointments (
 create index if not exists appointments_starts_at_idx
   on public.appointments (starts_at);
 
-alter table public.appointments
-  add constraint appointments_no_overlap
-  exclude using gist (
-    tstzrange(starts_at, ends_at, '[)') with &&
-  )
-  where (status = 'confirmed');
+do $constraint$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'appointments_no_overlap'
+      and conrelid = 'public.appointments'::regclass
+  ) then
+    alter table public.appointments
+      add constraint appointments_no_overlap
+      exclude using gist (
+        tstzrange(starts_at, ends_at, '[)') with &&
+      )
+      where (status = 'confirmed');
+  end if;
+end
+$constraint$;
 
 alter table public.appointments enable row level security;

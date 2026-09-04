@@ -2,9 +2,11 @@
 
 PostgreSQL is the source of truth. Local Postgres is Docker. Hosted Postgres is Supabase.
 
-Table SQL lives in `db/`, one file per table (plus extensions and `007_appointment_domain.sql`). Docker applies that folder on first boot. Apply the same files to Supabase (SQL editor or CLI), then `supabase/migrations/0002_storage.sql` for the portfolio bucket.
+Table SQL lives in `db/`, one file per table (plus extensions and `007_appointment_domain.sql`). Keep those files safe to rerun (`if not exists`, guarded constraints).
 
-If Postgres was created before later migrations existed, apply `007_appointment_domain.sql`, `008_public_site.sql`, `009_booking_contact.sql`, and `010_admin_ops.sql` once (or `docker compose down -v` and start fresh).
+Docker applies `db/` on first boot. Vercel applies the same files during `npm run build` (`scripts/apply-schema.mjs`) using `DATABASE_URL`. That env var must be available at build time. `supabase/migrations/0002_storage.sql` runs only when the `storage` schema exists.
+
+`npm run db:apply` applies schema without building. If Postgres was created before later files existed, run that (or `docker compose down -v` and start fresh).
 
 Busy periods live in `public.blocked_times` (not a second availability table). Overlapping busy blocks are allowed; both are considered by `getAvailableSlots`. Private `note` is admin-only.
 

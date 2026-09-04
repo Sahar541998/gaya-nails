@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/apply-schema.mjs && next build",
+    "db:apply": "node scripts/apply-schema.mjs",
     "start": "next start",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",

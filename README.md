@@ -35,7 +35,7 @@ The Compose `app` service uses:
 
 Local verification code is always `000000`.
 
-Schema is created from `db/*.sql` the first time the Postgres volume is created.
+Schema is created from `db/*.sql` the first time the Postgres volume is created. `npm run db:apply` (and Vercel `npm run build`) applies the same files to whatever `DATABASE_URL` points at.
 
 ## Run the app on the host
 
@@ -50,7 +50,7 @@ npm run dev
 
 ## Production-shaped environment
 
-Set these in Vercel (and apply `db/*.sql` plus `supabase/migrations/0002_storage.sql` on the Supabase project):
+Set these in Vercel. Schema is applied automatically on deploy from `db/*.sql`:
 
 | Variable                        | Purpose                         |
 | ------------------------------- | ------------------------------- |
@@ -75,6 +75,7 @@ npm run lint
 npm run typecheck
 npm run format
 npm run format:check
+npm run db:apply
 npm run build
 ```
 
