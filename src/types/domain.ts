@@ -7,6 +7,8 @@ export type BlockedTimeId = string;
 export type Customer = {
   id: CustomerId;
   phoneE164: string;
+  displayName: string;
+  email: string;
   createdAt: string;
 };
 
@@ -16,6 +18,7 @@ export type Service = {
   durationMinutes: number;
   priceCents: number;
   isActive: boolean;
+  shortDescription: string;
 };
 
 export type AppointmentStatus = "confirmed" | "cancelled" | "completed";
@@ -29,6 +32,7 @@ export type Appointment = {
   status: AppointmentStatus;
   serviceNameAtBooking: string;
   priceCentsAtBooking: number;
+  note: string;
 };
 
 export type PortfolioImage = {
@@ -52,6 +56,9 @@ export type BusinessSettings = {
   bookingEnabled: boolean;
   slotIntervalMinutes: number;
   weeklyHours: WeeklyHours;
+  studioName: string;
+  locationLabel: string;
+  instagramUrl: string;
 };
 
 export type BlockedTime = {

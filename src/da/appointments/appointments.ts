@@ -15,6 +15,7 @@ export type CreateAppointmentRecord = {
   endsAt: string;
   serviceNameAtBooking: string;
   priceCentsAtBooking: number;
+  note: string;
 };
 
 export type Appointments = {

@@ -4,7 +4,7 @@ PostgreSQL is the source of truth. Local Postgres is Docker. Hosted Postgres is 
 
 Table SQL lives in `db/`, one file per table (plus extensions and `007_appointment_domain.sql`). Docker applies that folder on first boot. Apply the same files to Supabase (SQL editor or CLI), then `supabase/migrations/0002_storage.sql` for the portfolio bucket.
 
-If Postgres was created before `007_appointment_domain.sql` existed, apply that file once (or `docker compose down -v` and start fresh).
+If Postgres was created before later migrations existed, apply `007_appointment_domain.sql`, `008_public_site.sql`, and `009_booking_contact.sql` once (or `docker compose down -v` and start fresh).
 
 Customers use an internal UUID primary key. Phone (`phone_e164`) is unique, never the primary key.
 

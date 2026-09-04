@@ -10,6 +10,7 @@ type ServiceRow = {
   duration_minutes: number;
   price_cents: number;
   is_active: boolean;
+  short_description: string;
 };
 
 function mapService(row: ServiceRow): Service {
@@ -19,6 +20,7 @@ function mapService(row: ServiceRow): Service {
     durationMinutes: row.duration_minutes,
     priceCents: row.price_cents,
     isActive: row.is_active,
+    shortDescription: row.short_description,
   };
 }
 
@@ -28,7 +30,7 @@ export function createPostgresServices(): Services {
   return {
     async listActive() {
       const rows = await sql<ServiceRow[]>`
-        select id, name, duration_minutes, price_cents, is_active
+        select id, name, duration_minutes, price_cents, is_active, short_description
         from public.services
         where is_active = true
         order by name
@@ -38,7 +40,7 @@ export function createPostgresServices(): Services {
 
     async getById(id) {
       const rows = await sql<ServiceRow[]>`
-        select id, name, duration_minutes, price_cents, is_active
+        select id, name, duration_minutes, price_cents, is_active, short_description
         from public.services
         where id = ${id}
         limit 1

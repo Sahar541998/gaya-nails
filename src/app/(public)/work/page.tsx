@@ -1,32 +1,30 @@
-import { AboutSection } from "@/components/site/about-section";
-import { BookingCta } from "@/components/site/booking-cta";
-import { Hero } from "@/components/site/hero";
+import type { Metadata } from "next";
+
 import { PortfolioPreview } from "@/components/site/portfolio-preview";
-import { ServicesSection } from "@/components/site/services-section";
 import { galleryFromPortfolio } from "@/lib/public-media";
 import { getHomePageData } from "@/server/site/get-home-page";
 
-export default async function HomePage() {
+export const metadata: Metadata = {
+  title: "My work",
+};
+
+export default async function WorkPage() {
   const page = await getHomePageData();
   const data = page.ok
     ? page.data
     : {
-        studio: { studioName: "Gaya", locationLabel: "", instagramUrl: "" },
-        services: [],
         gallery: galleryFromPortfolio([]),
         galleryIsPlaceholder: true,
       };
 
   return (
     <main id="main">
-      <Hero />
       <PortfolioPreview
         items={data.gallery}
         isPlaceholder={data.galleryIsPlaceholder}
+        showViewAll={false}
+        headingLevel="h1"
       />
-      <ServicesSection services={data.services} />
-      <AboutSection studioName={data.studio.studioName} />
-      <BookingCta />
     </main>
   );
 }

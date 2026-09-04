@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   addMinutes,
   BUSINESS_TIME_ZONE,
+  DEFAULT_WEEKLY_HOURS,
+  listOpenLocalDates,
   parseInstant,
   rangesOverlap,
   weekdayKey,
@@ -58,5 +60,20 @@ describe("business time", () => {
         .toUTC()
         .toISO(),
     );
+  });
+
+  it("lists only days that have configured hours", () => {
+    const now = DateTime.fromObject(
+      { year: 2099, month: 6, day: 14, hour: 8 },
+      { zone: BUSINESS_TIME_ZONE },
+    ).toJSDate();
+    const dates = listOpenLocalDates(
+      DEFAULT_WEEKLY_HOURS,
+      BUSINESS_TIME_ZONE,
+      now,
+      7,
+    );
+    expect(dates).toContain("2099-06-14");
+    expect(dates).not.toContain("2099-06-20");
   });
 });

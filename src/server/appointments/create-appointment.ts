@@ -20,6 +20,7 @@ const inputSchema = z.object({
   serviceId: z.string().uuid(),
   startsAt: z.string().min(1),
   customerId: z.string().uuid().optional(),
+  note: z.string().max(500).optional(),
 });
 
 export type CreateAppointmentInput = {
@@ -27,6 +28,7 @@ export type CreateAppointmentInput = {
   serviceId: ServiceId;
   startsAt: string;
   customerId?: CustomerId;
+  note?: string;
   now?: Date;
 };
 
@@ -37,6 +39,7 @@ export async function createAppointment(
     serviceId: input.serviceId,
     startsAt: input.startsAt,
     customerId: input.customerId,
+    note: input.note,
   });
   if (!parsed.success) {
     return validationError("Enter a valid service and start time.");
@@ -105,6 +108,7 @@ export async function createAppointment(
       endsAt: window.data.endsAtIso,
       serviceNameAtBooking: service.data.name,
       priceCentsAtBooking: service.data.priceCents,
+      note: parsed.data.note ?? "",
     });
     return ok(appointment);
   } catch (error) {

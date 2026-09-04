@@ -1,10 +1,10 @@
 import "server-only";
 
 import { getDataAccess } from "@/da";
-import { notImplemented, validationError } from "@/lib/errors";
+import { validationError } from "@/lib/errors";
 import { parsePhoneE164 } from "@/lib/phone";
-import { ok, type Result } from "@/types/result";
 import type { Customer } from "@/types/domain";
+import { ok, type Result } from "@/types/result";
 
 export async function getCustomerByPhone(
   phone: string,
@@ -18,6 +18,16 @@ export async function getCustomerByPhone(
   return ok(customer);
 }
 
-export async function getOrCreateCustomerByPhone(): Promise<Result<never>> {
-  return notImplemented("getOrCreateCustomerByPhone");
+export async function getOrCreateCustomerByPhone(
+  phone: string,
+): Promise<Result<Customer>> {
+  const parsedPhone = parsePhoneE164(phone);
+  if (!parsedPhone.success) {
+    return validationError("Enter a valid phone number.");
+  }
+
+  const customer = await getDataAccess().customers.getOrCreateByPhone(
+    parsedPhone.data,
+  );
+  return ok(customer);
 }

@@ -11,6 +11,7 @@ import { createAppointment } from "@/server/appointments/create-appointment";
 import { getAppointment } from "@/server/appointments/get-appointment";
 import { rescheduleAppointment } from "@/server/appointments/reschedule-appointment";
 import { getAvailableSlots } from "@/server/availability/get-available-slots";
+import { submitCustomerBooking } from "@/server/booking/submit-customer-booking";
 
 const sql = getSql();
 const da = getDataAccess();
@@ -402,5 +403,73 @@ describe("appointment domain", () => {
       return;
     }
     expect(hidden.error.code).toBe("NOT_AUTHORIZED");
+  });
+
+  it("persists customer details and a note from the public booking flow", async () => {
+    const serviceId = await insertService({
+      durationMinutes: 60,
+      priceCents: 12000,
+    });
+    const { customer, token } = await verifiedCustomer();
+    const booked = await submitCustomerBooking({
+      actor: { kind: "customer", verificationToken: token },
+      serviceId,
+      startsAt: localStart(9),
+      displayName: "Maya Cohen",
+      email: "maya@example.com",
+      phone: customer.phoneE164,
+      note: "Almond shape, dusty rose",
+      now: now.toJSDate(),
+    });
+    expect(booked.ok).toBe(true);
+    if (!booked.ok) {
+      return;
+    }
+    const overlapping = await da.appointments.listConfirmedOverlapping(
+      localStart(9),
+      localStart(10),
+    );
+    const appointmentId = overlapping[0]?.id;
+    if (appointmentId !== undefined) {
+      createdAppointmentIds.push(appointmentId);
+    }
+    expect(booked.data.serviceName.length).toBeGreaterThan(0);
+    expect(booked.data.priceCents).toBe(12000);
+    expect(booked.data.durationMinutes).toBe(60);
+    expect(booked.data.note).toBe("Almond shape, dusty rose");
+    const stored = await da.customers.getById(customer.id);
+    expect(stored?.displayName).toBe("Maya Cohen");
+    expect(stored?.email).toBe("maya@example.com");
+  });
+
+  it("does not book with an unverified session", async () => {
+    const serviceId = await insertService({ durationMinutes: 60 });
+    const booked = await submitCustomerBooking({
+      actor: { kind: "customer", verificationToken: "not-a-real-token" },
+      serviceId,
+      startsAt: localStart(9),
+      displayName: "Maya Cohen",
+      email: "maya@example.com",
+      phone: "+972501234567",
+      note: "",
+      now: now.toJSDate(),
+    });
+    expect(booked.ok).toBe(false);
+  });
+
+  it("does not book when the phone does not match the verified session", async () => {
+    const serviceId = await insertService({ durationMinutes: 60 });
+    const { token } = await verifiedCustomer();
+    const booked = await submitCustomerBooking({
+      actor: { kind: "customer", verificationToken: token },
+      serviceId,
+      startsAt: localStart(9),
+      displayName: "Maya Cohen",
+      email: "maya@example.com",
+      phone: "+972509999999",
+      note: "",
+      now: now.toJSDate(),
+    });
+    expect(booked.ok).toBe(false);
   });
 });

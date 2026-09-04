@@ -10,6 +10,9 @@ type BusinessSettingsRow = {
   booking_enabled: boolean;
   slot_interval_minutes: number;
   weekly_hours: unknown;
+  studio_name: string;
+  location_label: string;
+  instagram_url: string;
 };
 
 function isDayHours(value: unknown): value is DayHours {
@@ -48,6 +51,9 @@ function mapBusinessSettings(row: BusinessSettingsRow): BusinessSettings {
     bookingEnabled: row.booking_enabled,
     slotIntervalMinutes: row.slot_interval_minutes,
     weeklyHours: parseWeeklyHours(row.weekly_hours),
+    studioName: row.studio_name.length > 0 ? row.studio_name : "Gaya",
+    locationLabel: row.location_label,
+    instagramUrl: row.instagram_url,
   };
 }
 
@@ -57,7 +63,9 @@ export function createPostgresBusinessSettings(): BusinessSettingsStore {
   return {
     async get() {
       const rows = await sql<BusinessSettingsRow[]>`
-        select timezone, booking_enabled, slot_interval_minutes, weekly_hours
+        select
+          timezone, booking_enabled, slot_interval_minutes, weekly_hours,
+          studio_name, location_label, instagram_url
         from public.business_settings
         where id = true
         limit 1
@@ -69,6 +77,9 @@ export function createPostgresBusinessSettings(): BusinessSettingsStore {
           bookingEnabled: true,
           slotIntervalMinutes: 30,
           weeklyHours: DEFAULT_WEEKLY_HOURS,
+          studioName: "Gaya",
+          locationLabel: "",
+          instagramUrl: "",
         };
       }
       return mapBusinessSettings(row);

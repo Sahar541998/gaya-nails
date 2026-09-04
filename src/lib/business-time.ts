@@ -144,3 +144,40 @@ export function parseLocalDate(
   }
   return local;
 }
+
+export function formatTimeHm(iso: string, timeZone: string): string {
+  const value = DateTime.fromISO(iso, { setZone: true }).setZone(timeZone);
+  if (!value.isValid) {
+    return iso;
+  }
+  return value.toFormat("HH:mm");
+}
+
+export function formatDateLong(isoOrDate: string, timeZone: string): string {
+  const fromDate = parseLocalDate(isoOrDate, timeZone);
+  const value =
+    fromDate ??
+    DateTime.fromISO(isoOrDate, { setZone: true }).setZone(timeZone);
+  if (!value.isValid) {
+    return isoOrDate;
+  }
+  return value.toFormat("ccc d LLL yyyy");
+}
+
+export function listOpenLocalDates(
+  weeklyHours: WeeklyHours,
+  timeZone: string,
+  now: Date,
+  dayCount: number,
+): readonly string[] {
+  const start = DateTime.fromJSDate(now, { zone: timeZone }).startOf("day");
+  const dates: string[] = [];
+  for (let offset = 0; offset < dayCount; offset += 1) {
+    const day = start.plus({ days: offset });
+    if (weeklyHours[weekdayKey(day, timeZone)] === undefined) {
+      continue;
+    }
+    dates.push(day.toFormat("yyyy-MM-dd"));
+  }
+  return dates;
+}

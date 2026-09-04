@@ -18,6 +18,7 @@ type AppointmentRow = {
   status: AppointmentStatus;
   service_name_at_booking: string;
   price_cents_at_booking: number;
+  note: string;
 };
 
 function mapAppointment(row: AppointmentRow): Appointment {
@@ -30,6 +31,7 @@ function mapAppointment(row: AppointmentRow): Appointment {
     status: row.status,
     serviceNameAtBooking: row.service_name_at_booking,
     priceCentsAtBooking: row.price_cents_at_booking,
+    note: row.note,
   };
 }
 
@@ -41,7 +43,7 @@ export function createPostgresAppointments(): Appointments {
       const rows = await sql<AppointmentRow[]>`
         select
           id, customer_id, service_id, starts_at, ends_at, status,
-          service_name_at_booking, price_cents_at_booking
+          service_name_at_booking, price_cents_at_booking, note
         from public.appointments
         where id = ${id}
         limit 1
@@ -54,7 +56,7 @@ export function createPostgresAppointments(): Appointments {
       const rows = await sql<AppointmentRow[]>`
         select
           id, customer_id, service_id, starts_at, ends_at, status,
-          service_name_at_booking, price_cents_at_booking
+          service_name_at_booking, price_cents_at_booking, note
         from public.appointments
         where starts_at < ${endsAt}
           and ends_at > ${startsAt}
@@ -67,7 +69,7 @@ export function createPostgresAppointments(): Appointments {
       const rows = await sql<AppointmentRow[]>`
         select
           id, customer_id, service_id, starts_at, ends_at, status,
-          service_name_at_booking, price_cents_at_booking
+          service_name_at_booking, price_cents_at_booking, note
         from public.appointments
         where status = 'confirmed'
           and starts_at < ${endsAt}
@@ -82,7 +84,7 @@ export function createPostgresAppointments(): Appointments {
         const rows = await sql<AppointmentRow[]>`
           insert into public.appointments (
             customer_id, service_id, starts_at, ends_at, status,
-            service_name_at_booking, price_cents_at_booking
+            service_name_at_booking, price_cents_at_booking, note
           )
           values (
             ${input.customerId},
@@ -91,11 +93,12 @@ export function createPostgresAppointments(): Appointments {
             ${input.endsAt},
             'confirmed',
             ${input.serviceNameAtBooking},
-            ${input.priceCentsAtBooking}
+            ${input.priceCentsAtBooking},
+            ${input.note}
           )
           returning
             id, customer_id, service_id, starts_at, ends_at, status,
-            service_name_at_booking, price_cents_at_booking
+            service_name_at_booking, price_cents_at_booking, note
         `;
         const row = rows[0];
         if (row === undefined) {
@@ -114,7 +117,7 @@ export function createPostgresAppointments(): Appointments {
         where id = ${id}
         returning
           id, customer_id, service_id, starts_at, ends_at, status,
-          service_name_at_booking, price_cents_at_booking
+          service_name_at_booking, price_cents_at_booking, note
       `;
       const row = rows[0];
       if (row === undefined) {
@@ -132,7 +135,7 @@ export function createPostgresAppointments(): Appointments {
             and status = 'confirmed'
           returning
             id, customer_id, service_id, starts_at, ends_at, status,
-            service_name_at_booking, price_cents_at_booking
+            service_name_at_booking, price_cents_at_booking, note
         `;
         const row = rows[0];
         if (row === undefined) {

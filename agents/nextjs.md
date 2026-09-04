@@ -16,9 +16,7 @@ Keep the public landing page mostly static / server-rendered. Minimize client Ja
 
 Route layout:
 
-- `src/app/(public)/` public pages
-- `src/app/book/` booking
-- `src/app/manage/` customer appointment management
+- `src/app/(public)/` public pages, including `/`, `/work`, `/book`, and `/manage`
 - `src/app/admin/` nail-artist admin
 - `src/app/api/` HTTP endpoints only when required
 
