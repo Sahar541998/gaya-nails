@@ -1,10 +1,25 @@
 import "server-only";
 
-import type { CustomerRepository } from "@/da/contracts";
+import type { Customers } from "@/da/customers/customers";
 import { getSql } from "@/da/postgres/client";
-import { mapCustomer, type CustomerRow } from "@/da/postgres/mappers";
+import { toIso } from "@/da/postgres/iso";
+import type { Customer } from "@/types/domain";
 
-export function createCustomerRepository(): CustomerRepository {
+type CustomerRow = {
+  id: string;
+  phone_e164: string;
+  created_at: Date | string;
+};
+
+function mapCustomer(row: CustomerRow): Customer {
+  return {
+    id: row.id,
+    phoneE164: row.phone_e164,
+    createdAt: toIso(row.created_at),
+  };
+}
+
+export function createPostgresCustomers(): Customers {
   const sql = getSql();
 
   return {

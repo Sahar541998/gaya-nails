@@ -1,64 +1,56 @@
 # Gaya Nails
 
-Website for Gaya’s nail studio. This repository is a Next.js App Router app (Server Components by default). There is no separate backend. Persistence goes through a small data-access layer so Postgres (local Docker or hosted Supabase) can be replaced without rewriting the UI.
+Website for Gaya’s nail studio. Next.js App Router is the application server. Local development runs in Docker. Persistence and SMS go through per-table / per-provider interfaces so Postgres or Twilio can be replaced without rewriting the UI.
 
 ## Stack
 
 - Next.js 16 (App Router, React Compiler, TypeScript)
 - Oxlint + Prettier
 - PostgreSQL (Docker locally, Supabase in production)
-- Twilio Verify for production SMS
-- Vercel for the app
+- SMS: Docker mock locally, Twilio Verify in production
+- Vercel for production
 
 ## Requirements
 
-- Node.js 20+
-- npm
-- Docker Desktop (or another Docker Engine) for local Postgres and the SMS mock
+- Docker Desktop (or another Docker Engine)
+- Node.js 20+ and npm only if you run the app on the host
 
-Optional later: a [Supabase](https://supabase.com) project and a [Twilio](https://www.twilio.com) Verify service.
+## Run locally (Docker)
 
-## Expected local setup
+```bash
+docker compose up --build
+```
 
-1. Copy environment variables:
+Open [http://localhost:3000](http://localhost:3000).
 
-   ```bash
-   cp .env.example .env.local
-   ```
+Health: [http://localhost:3000/api/health](http://localhost:3000/api/health) (`database: true` when Postgres is up).
 
-2. For day-to-day local work, keep these values (already in `.env.example`):
+The Compose `app` service uses:
 
-   | Variable       | Local value                                         |
-   | -------------- | --------------------------------------------------- |
-   | `DA_DRIVER`    | `postgres`                                          |
-   | `DATABASE_URL` | `postgres://gaya:gaya@localhost:5432/gaya_nails`    |
-   | `SMS_DRIVER`   | `console` (no SMS container) or `mock` (Docker SMS) |
-   | `SMS_MOCK_URL` | `http://localhost:4010` (only if `SMS_DRIVER=mock`) |
+| Variable       | Docker value                                    |
+| -------------- | ----------------------------------------------- |
+| `DATABASE_URL` | `postgres://gaya:gaya@postgres:5432/gaya_nails` |
+| `SMS_DRIVER`   | `docker`                                        |
+| `SMS_MOCK_URL` | `http://sms:4010`                               |
 
-3. Start third-party services:
+Local verification code is always `000000`.
 
-   ```bash
-   docker compose up -d --build
-   ```
+Schema is created from `db/*.sql` the first time the Postgres volume is created.
 
-   Postgres is created with `supabase/migrations/0001_init.sql` on first boot.
+## Run the app on the host
 
-4. Install and run the app:
+```bash
+docker compose up -d postgres sms
+cp .env.example .env.local
+npm install
+npm run dev
+```
 
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-5. Open [http://localhost:3000](http://localhost:3000).
-
-   Health: [http://localhost:3000/api/health](http://localhost:3000/api/health) (`database: true` when Postgres is up).
-
-Local SMS codes (`console` and `mock` drivers) are always `000000`. Do not use that in production.
+`.env.local` must keep `localhost` in `DATABASE_URL` and `SMS_MOCK_URL`.
 
 ## Production-shaped environment
 
-When you are ready to use hosted Supabase and Twilio, set in `.env.local` or Vercel:
+Set these in Vercel (and apply `db/*.sql` plus `supabase/migrations/0002_storage.sql` on the Supabase project):
 
 | Variable                        | Purpose                         |
 | ------------------------------- | ------------------------------- |
@@ -71,27 +63,21 @@ When you are ready to use hosted Supabase and Twilio, set in `.env.local` or Ver
 | `TWILIO_AUTH_TOKEN`             | Verify                          |
 | `TWILIO_VERIFY_SERVICE_SID`     | Verify                          |
 
-Apply `supabase/migrations/` to the Supabase project (SQL editor or CLI), including `0002_storage.sql` for the portfolio bucket.
-
 Never put service-role, database, or Twilio secrets in `NEXT_PUBLIC_*`.
 
 ## Scripts
 
 ```bash
-npm run dev
+docker compose up --build
+docker compose down
+docker compose down -v     # delete local database volume
 npm run lint
 npm run typecheck
 npm run format
 npm run format:check
 npm run build
-docker compose down        # stop local Postgres + SMS mock
-docker compose down -v     # also delete local database volume
 ```
 
 ## Architecture
 
-UI calls `src/server/**`. Those modules call `getDataAccess()` (`src/da`). See [AGENTS.md](AGENTS.md).
-
-## Deploy
-
-Connect the repo to Vercel, set production environment variables, and point `DATABASE_URL` at Supabase Postgres.
+UI is props-only. Pages call `src/server/**`. Server code calls `getDataAccess()`. See [AGENTS.md](AGENTS.md).

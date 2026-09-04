@@ -1,10 +1,28 @@
 import "server-only";
 
-import type { ServiceRepository } from "@/da/contracts";
 import { getSql } from "@/da/postgres/client";
-import { mapService, type ServiceRow } from "@/da/postgres/mappers";
+import type { Services } from "@/da/services/services";
+import type { Service } from "@/types/domain";
 
-export function createServiceRepository(): ServiceRepository {
+type ServiceRow = {
+  id: string;
+  name: string;
+  duration_minutes: number;
+  price_cents: number;
+  is_active: boolean;
+};
+
+function mapService(row: ServiceRow): Service {
+  return {
+    id: row.id,
+    name: row.name,
+    durationMinutes: row.duration_minutes,
+    priceCents: row.price_cents,
+    isActive: row.is_active,
+  };
+}
+
+export function createPostgresServices(): Services {
   const sql = getSql();
 
   return {

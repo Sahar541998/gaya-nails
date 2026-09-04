@@ -1,14 +1,35 @@
 import "server-only";
 
-import type { AppointmentRepository } from "@/da/contracts";
+import type { Appointments } from "@/da/appointments/appointments";
 import { getSql } from "@/da/postgres/client";
 import {
   DaNotFoundError,
   rethrowMappedPostgresError,
 } from "@/da/postgres/errors";
-import { mapAppointment, type AppointmentRow } from "@/da/postgres/mappers";
+import { toIso } from "@/da/postgres/iso";
+import type { Appointment, AppointmentStatus } from "@/types/domain";
 
-export function createAppointmentRepository(): AppointmentRepository {
+type AppointmentRow = {
+  id: string;
+  customer_id: string;
+  service_id: string;
+  starts_at: Date | string;
+  ends_at: Date | string;
+  status: AppointmentStatus;
+};
+
+function mapAppointment(row: AppointmentRow): Appointment {
+  return {
+    id: row.id,
+    customerId: row.customer_id,
+    serviceId: row.service_id,
+    startsAt: toIso(row.starts_at),
+    endsAt: toIso(row.ends_at),
+    status: row.status,
+  };
+}
+
+export function createPostgresAppointments(): Appointments {
   const sql = getSql();
 
   return {

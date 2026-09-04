@@ -2,7 +2,7 @@
 
 Use the repo scripts:
 
-- `npm run lint` — Oxlint (type-aware)
+- `npm run lint` — Oxlint (type-aware). This repo uses Oxlint instead of ESLint.
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run format` / `npm run format:check` — Prettier
 

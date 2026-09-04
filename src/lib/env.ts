@@ -5,18 +5,12 @@ import { z } from "zod";
 const emptyToUndefined = (value: unknown) =>
   value === "" || value === undefined ? undefined : value;
 
-const daDriverSchema = z.preprocess(
-  emptyToUndefined,
-  z.enum(["postgres"]).default("postgres"),
-);
-
 const smsDriverSchema = z.preprocess(
   emptyToUndefined,
-  z.enum(["console", "twilio", "mock"]).default("console"),
+  z.enum(["docker", "twilio"]).default("docker"),
 );
 
 const baseSchema = z.object({
-  DA_DRIVER: daDriverSchema,
   SMS_DRIVER: smsDriverSchema,
   DATABASE_URL: z.string().min(1),
 });
@@ -27,7 +21,7 @@ const twilioSchema = z.object({
   TWILIO_VERIFY_SERVICE_SID: z.string().min(1),
 });
 
-const mockSmsSchema = z.object({
+const dockerSmsSchema = z.object({
   SMS_MOCK_URL: z.string().url(),
 });
 
@@ -37,17 +31,15 @@ const supabaseSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
-export type DaDriver = z.infer<typeof daDriverSchema>;
 export type SmsDriver = z.infer<typeof smsDriverSchema>;
 
 export type ServerEnv = z.infer<typeof baseSchema> &
   Partial<z.infer<typeof twilioSchema>> &
-  Partial<z.infer<typeof mockSmsSchema>> &
+  Partial<z.infer<typeof dockerSmsSchema>> &
   Partial<z.infer<typeof supabaseSchema>>;
 
 export function getServerEnv(): ServerEnv {
   const base = baseSchema.safeParse({
-    DA_DRIVER: process.env.DA_DRIVER,
     SMS_DRIVER: process.env.SMS_DRIVER,
     DATABASE_URL: process.env.DATABASE_URL,
   });
@@ -58,7 +50,7 @@ export function getServerEnv(): ServerEnv {
 
   const smsDriver = base.data.SMS_DRIVER;
   let twilio: z.infer<typeof twilioSchema> | undefined;
-  let mockSms: z.infer<typeof mockSmsSchema> | undefined;
+  let dockerSms: z.infer<typeof dockerSmsSchema> | undefined;
 
   if (smsDriver === "twilio") {
     const parsed = twilioSchema.safeParse({
@@ -70,16 +62,14 @@ export function getServerEnv(): ServerEnv {
       throw new Error("Missing or invalid Twilio environment variables.");
     }
     twilio = parsed.data;
-  }
-
-  if (smsDriver === "mock") {
-    const parsed = mockSmsSchema.safeParse({
+  } else {
+    const parsed = dockerSmsSchema.safeParse({
       SMS_MOCK_URL: process.env.SMS_MOCK_URL,
     });
     if (!parsed.success) {
       throw new Error("Missing or invalid SMS_MOCK_URL.");
     }
-    mockSms = parsed.data;
+    dockerSms = parsed.data;
   }
 
   const supabase = supabaseSchema.safeParse({
@@ -91,7 +81,7 @@ export function getServerEnv(): ServerEnv {
   return {
     ...base.data,
     ...twilio,
-    ...mockSms,
+    ...dockerSms,
     ...(supabase.success ? supabase.data : {}),
   };
 }

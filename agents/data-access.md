@@ -1,19 +1,21 @@
 # Data access
 
-`src/da/contracts.ts` is the only persistence/SMS API `src/server/**` may call.
+Each table has its own folder. The interface file is the contract. The postgres file is today’s adapter.
 
-Get a composed instance with `getDataAccess()` from `src/da/index.ts`. Do not construct adapters in UI or in random helpers.
+```
+src/da/<table>/<table>.ts     interface
+src/da/<table>/postgres.ts    Postgres implementation
+```
 
-Domain types live in `src/types/domain.ts`. Map snake_case rows to those types inside `src/da/postgres`. Never return database rows from server operations.
+`src/server/**` may only use `getDataAccess()` from `src/da/index.ts`. It must not import postgres.js, SQL, or Twilio.
 
-Postgres is accessed with `postgres` (postgres.js) through `DATABASE_URL`. Production uses the Supabase Postgres connection string. Local uses Docker Postgres. The rest of the app should not care which host it is.
+To replace Postgres with another store, add `src/da/<table>/<other>.ts` that implements the same interface and wire it in `src/da/index.ts`. Do not change server operations or React.
 
-SMS is an `SmsVerifier` (`send`, `check`):
+SMS follows the same rule:
 
-- `console` — no network; accept code `000000`
-- `mock` — Docker `sms-mock`; accept code `000000`
-- `twilio` — Twilio Verify for production
+- `src/da/sms/sms-verifier.ts` — interface (`send`, `check`)
+- `src/da/sms/docker.ts` — local Docker mock
+- `src/da/sms/twilio.ts` — production Twilio Verify
+- `src/lib/twilio/verify.ts` — Twilio SDK only
 
-Do not generate or store OTP codes in our database.
-
-When swapping the database, implement the repository interfaces. Do not rewrite server operations or React components.
+Do not generate or store OTP codes. Local Docker SMS accepts `000000`.

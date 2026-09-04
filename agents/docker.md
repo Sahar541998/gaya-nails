@@ -1,20 +1,27 @@
 # Docker
 
-Third parties run in Docker Compose for local development:
-
-- `postgres` on port `5432` (user `gaya`, db `gaya_nails`)
-- `sms-mock` on port `4010` (always accepts code `000000`)
+Local development runs entirely in Docker Compose: Postgres, SMS mock, and the Next.js app.
 
 ```bash
-docker compose up -d --build
+docker compose up --build
 ```
 
-Wait until Postgres is healthy, then `npm run dev`.
+Open [http://localhost:3000](http://localhost:3000).
 
-`SMS_DRIVER=console` does not need `sms-mock`. `SMS_DRIVER=mock` does.
+- `postgres` — port 5432, schema from `db/*.sql` on first boot
+- `sms` — port 4010, code `000000`
+- `app` — port 3000, `SMS_DRIVER=docker`, `DATABASE_URL` points at the `postgres` service
 
-Do not run the Next.js app inside Docker unless there is a clear reason. Vercel is the app host.
+To run Next on the host instead, start only dependencies:
 
-Do not add Redis, extra admin UIs, or a fake Supabase stack unless a feature needs them.
+```bash
+docker compose up -d postgres sms
+cp .env.example .env.local
+npm run dev
+```
 
-Reset local data with `docker compose down -v` (destroys the Postgres volume).
+Host `.env.local` must use `localhost` URLs, not Docker service names.
+
+Reset local data with `docker compose down -v`.
+
+Do not add Redis or a fake full Supabase stack unless a feature needs them. Production app host is Vercel; Compose is local only.

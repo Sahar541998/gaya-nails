@@ -1,6 +1,6 @@
 # Next.js
 
-Use the App Router. Server Components are the default.
+Use the App Router. Server Components are the default. Next.js is the application server.
 
 Do not add `"use client"` unless the file needs browser APIs, local state, or event handlers.
 

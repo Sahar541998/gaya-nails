@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docker:up": "docker compose up -d --build",
+    "docker:up": "docker compose up --build",
     "docker:down": "docker compose down"
   },
   "dependencies": {

@@ -1,13 +1,25 @@
 # React
 
-Functional components only.
+Functional components only. Server Components by default.
 
-Server Components unless interactivity is required.
+Do not add `"use client"` unless the file needs browser events, local widget state, or browser APIs.
 
-UI components call well-named server operations. They do not implement database, Twilio, or authorization logic.
+Components should be logic-free. They render props. They do not fetch, authorize, validate for security, or talk to Postgres/Twilio.
 
-Keep Client Components small. Extract interactive bits instead of marking a whole page as client.
+Put decisions in `src/server/**` or in the route file (Server Component). Pass the result down as props.
 
-Do not introduce Redux or other global client stores.
+```tsx
+// page.tsx (server) — may load data
+<ServicesList services={services} />
 
-Use descriptive names (`createAppointment`, `getAvailableSlots`). Avoid `doThing`, `handleData`, `utils`, `helper`.
+// services-list.tsx — no fetching, no useEffect
+export function ServicesList({ services }: { services: readonly Service[] }) {
+  return ...
+}
+```
+
+Do not use React Context. Do not add Redux or other global client stores.
+
+Do not use `useEffect` to load data, sync props into state, or mirror server state. If data is needed, load it in a Server Component (or a Server Action) and pass it as props.
+
+Interactive bits stay small and colocated. Lift that state to the nearest client parent and pass it down. Do not mark a whole page as client to hold one input.

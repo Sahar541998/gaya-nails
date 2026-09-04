@@ -1,34 +1,31 @@
 import "server-only";
 
-import type { DataAccess, SmsVerifier } from "@/da/contracts";
-import { createAppointmentRepository } from "@/da/postgres/appointments";
-import { createCustomerRepository } from "@/da/postgres/customers";
-import { createPortfolioRepository } from "@/da/postgres/portfolio";
-import { createServiceRepository } from "@/da/postgres/services";
-import { createSettingsRepository } from "@/da/postgres/settings";
-import { createConsoleSmsVerifier } from "@/da/sms/console";
-import { createMockSmsVerifier } from "@/da/sms/mock";
+import { createPostgresAppointments } from "@/da/appointments/postgres";
+import { createPostgresBusinessSettings } from "@/da/business-settings/postgres";
+import { createPostgresCustomers } from "@/da/customers/postgres";
+import type { DataAccess } from "@/da/data-access";
+import { createPostgresPortfolioImages } from "@/da/portfolio-images/postgres";
+import { createPostgresServices } from "@/da/services/postgres";
+import { createDockerSmsVerifier } from "@/da/sms/docker";
+import type { SmsVerifier } from "@/da/sms/sms-verifier";
 import { createTwilioSmsVerifier } from "@/da/sms/twilio";
 import { getServerEnv } from "@/lib/env";
 
 function createSmsVerifier(): SmsVerifier {
-  const driver = getServerEnv().SMS_DRIVER;
-  if (driver === "twilio") {
+  if (getServerEnv().SMS_DRIVER === "twilio") {
     return createTwilioSmsVerifier();
   }
-  if (driver === "mock") {
-    return createMockSmsVerifier();
-  }
-  return createConsoleSmsVerifier();
+
+  return createDockerSmsVerifier();
 }
 
 export function createDataAccess(): DataAccess {
   return {
-    customers: createCustomerRepository(),
-    services: createServiceRepository(),
-    appointments: createAppointmentRepository(),
-    portfolio: createPortfolioRepository(),
-    settings: createSettingsRepository(),
+    customers: createPostgresCustomers(),
+    services: createPostgresServices(),
+    appointments: createPostgresAppointments(),
+    portfolioImages: createPostgresPortfolioImages(),
+    businessSettings: createPostgresBusinessSettings(),
     sms: createSmsVerifier(),
   };
 }

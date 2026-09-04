@@ -1,15 +1,15 @@
 # Database
 
-PostgreSQL is the source of truth. Hosted Postgres is Supabase. Local Postgres is Docker.
+PostgreSQL is the source of truth. Local Postgres is Docker. Hosted Postgres is Supabase.
 
-Schema lives in `supabase/migrations/`. `0001_init.sql` is applied by Docker on first boot and by Supabase (SQL editor or CLI) in hosted environments. `0002_storage.sql` is Supabase Storage only; it is not applied to local Docker Postgres.
+Table SQL lives in `db/`, one file per table (plus `001_extensions.sql`). Docker applies that folder on first boot. Apply the same files to Supabase (SQL editor or CLI), then `supabase/migrations/0002_storage.sql` for the portfolio bucket.
 
 Customers use an internal UUID primary key. Phone (`phone_e164`) is unique, never the primary key.
 
 Confirmed appointments must not overlap (`appointments_no_overlap`). Do not weaken that constraint.
 
-Enable RLS on hosted Supabase. The Next.js server talks to tables through `DATABASE_URL` (server-only). Do not query tables from the browser.
+Enable RLS on hosted Supabase. Table access from the Next.js server goes through `DATABASE_URL` and `src/da`. Do not query tables from the browser.
 
-Supabase JS clients in `src/lib/supabase/**` are for Auth and Storage, not for table CRUD.
+Supabase JS clients in `src/lib/supabase/**` are for Auth and Storage, not table CRUD.
 
 Never put `DATABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` in `NEXT_PUBLIC_*`.

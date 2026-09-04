@@ -11,17 +11,17 @@ services:
       POSTGRES_DB: gaya_nails
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./supabase/migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro
+      - ./db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gaya -d gaya_nails"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  sms-mock:
+  sms:
     build:
       context: ./docker/sms-mock
-    container_name: gaya-nails-sms-mock
+    container_name: gaya-nails-sms
     restart: unless-stopped
     ports:
       - "4010:4010"
@@ -29,5 +29,29 @@ services:
       PORT: "4010"
       MOCK_CODE: "000000"
 
+  app:
+    build:
+      context: .
+    container_name: gaya-nails-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://gaya:gaya@postgres:5432/gaya_nails
+      SMS_DRIVER: docker
+      SMS_MOCK_URL: http://sms:4010
+    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    volumes:
+      - .:/app
+      - app_node_modules:/app/node_modules
+      - app_next:/app/.next
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sms:
+        condition: service_healthy
+
 volumes:
   postgres_data:
+  app_node_modules:
+  app_next:

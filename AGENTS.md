@@ -10,10 +10,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Gaya Nails
 
-Website for Gaya’s nail studio. Keep it simple, fast, and easy to change infrastructure behind interfaces.
+Small nail-artist website. Keep it simple, fast, secure, and easy for one developer. This is not a SaaS platform.
 
 Read the topic file that matches the work:
 
+- [Scope](agents/scope.md)
 - [Architecture](agents/architecture.md)
 - [Next.js](agents/nextjs.md)
 - [React](agents/react.md)
@@ -23,6 +24,7 @@ Read the topic file that matches the work:
 - [Server operations](agents/server.md)
 - [Auth and SMS](agents/auth.md)
 - [Docker](agents/docker.md)
+- [Performance](agents/performance.md)
 - [Lint and format](agents/lint-format.md)
 - [Vercel](agents/vercel.md)
 - [Security](agents/security.md)

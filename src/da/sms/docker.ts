@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { SmsVerifier } from "@/da/contracts";
+import type { SmsVerifier } from "@/da/sms/sms-verifier";
 import { getSmsMockUrl } from "@/lib/env";
 
 async function postJson(path: string, body: Record<string, string>) {
@@ -23,7 +23,7 @@ async function postJson(path: string, body: Record<string, string>) {
   return { approved };
 }
 
-export function createMockSmsVerifier(): SmsVerifier {
+export function createDockerSmsVerifier(): SmsVerifier {
   return {
     async send(phoneE164) {
       await postJson("/verifications", { to: phoneE164 });

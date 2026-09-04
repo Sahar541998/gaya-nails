@@ -7,6 +7,6 @@ import type { PortfolioImage } from "@/types/domain";
 export async function listPortfolioImages(): Promise<
   Result<readonly PortfolioImage[]>
 > {
-  const images = await getDataAccess().portfolio.list();
+  const images = await getDataAccess().portfolioImages.list();
   return ok(images);
 }

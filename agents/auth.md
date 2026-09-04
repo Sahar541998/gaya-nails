@@ -4,19 +4,24 @@
 
 No traditional customer account. Phone verification proves control of the number.
 
-Use `getDataAccess().sms` (`SmsVerifier`). Domain API:
+Domain API in `src/server/verification/`:
 
 - `sendPhoneVerification`
 - `verifyPhone`
 
-Do not generate or store OTP codes. Do not log OTP codes. Do not log Twilio credentials.
+Those functions use `getDataAccess().sms` (`SmsVerifier`). They must not import Twilio.
 
-Normalize phones to E.164. Knowing a phone number is not authorization. Never use `/manage?phone=...` as access control.
+Swap SMS by changing `SMS_DRIVER` and the adapter in `src/da/sms/`:
 
-Local drivers (`console`, `mock`) accept `000000`. Production must use Twilio Verify.
+- local: `docker` (Compose `sms` service, code `000000`)
+- production: `twilio`
+
+Do not generate or store OTP codes. Do not log OTP codes or Twilio credentials.
+
+Normalize phones to E.164. Knowing a phone number is not authorization.
 
 In-memory rate limits in `src/lib/rate-limit.ts` are a local guard only. They are not durable on Vercel.
 
 ## Admin
 
-The nail artist uses Supabase Auth. Every admin operation must call `requireAdmin` on the server. Hiding a button is not authorization.
+The nail artist uses Supabase Auth. Every admin operation must call `requireAdmin` on the server.
