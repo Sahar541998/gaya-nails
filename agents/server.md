@@ -4,7 +4,7 @@ Every file under `src/server/**`, `src/da/**`, `src/lib/env.ts`, `src/lib/supaba
 
 These modules contain secrets, privileged clients, or business logic. They must never be imported by Client Components.
 
-Booking operations are stubbed until that work starts. Phone verification is implemented. Reads that already have repositories go through `getDataAccess()`.
+Booking operations live in `src/server/appointments` and `src/server/availability`. Phone verification is implemented. Reads and writes go through `getDataAccess()`.
 
 The database is the source of truth. The server must verify availability, conflicts, prices, durations, identity, and authorization. Appointment creation must prevent double-booking using the exclusion constraint (and a transaction when implemented).
 

@@ -1,18 +1,21 @@
 import "server-only";
 
+import { DateTime } from "luxon";
+
 import { err, ok, type Result } from "@/types/result";
+import { getDataAccess } from "@/da";
 import { logger } from "@/lib/logger";
 import { consumeRateLimit } from "@/lib/rate-limit";
-import { getDataAccess } from "@/da";
 import { parseVerificationInput } from "@/server/verification/parse-input";
 
 const CHECK_LIMIT = 8;
 const CHECK_WINDOW_MS = 10 * 60 * 1000;
+const SESSION_HOURS = 24;
 
 export async function verifyPhone(
   phone: string,
   code: string,
-): Promise<Result<{ verified: true }>> {
+): Promise<Result<{ verificationToken: string; expiresAt: string }>> {
   const parsed = parseVerificationInput(phone, code);
   if (!parsed.ok) {
     return parsed;
@@ -41,7 +44,21 @@ export async function verifyPhone(
       });
     }
 
-    return ok({ verified: true });
+    const customer =
+      await getDataAccess().customers.getOrCreateByPhone(phoneE164);
+    const expiresAt = DateTime.utc().plus({ hours: SESSION_HOURS }).toISO();
+    if (expiresAt === null) {
+      throw new Error("Invalid session expiry.");
+    }
+    const session = await getDataAccess().bookingSessions.create(
+      customer.id,
+      expiresAt,
+    );
+
+    return ok({
+      verificationToken: session.token,
+      expiresAt: session.expiresAt,
+    });
   } catch (error) {
     logger.error("Failed to check phone verification", {
       reason: error instanceof Error ? error.name : "unknown",

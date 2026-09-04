@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createPostgresAppointments } from "@/da/appointments/postgres";
+import { createPostgresBlockedTimes } from "@/da/blocked-times/postgres";
+import { createPostgresBookingSessions } from "@/da/booking-sessions/postgres";
 import { createPostgresBusinessSettings } from "@/da/business-settings/postgres";
 import { createPostgresCustomers } from "@/da/customers/postgres";
 import type { DataAccess } from "@/da/data-access";
@@ -26,6 +28,8 @@ export function createDataAccess(): DataAccess {
     appointments: createPostgresAppointments(),
     portfolioImages: createPostgresPortfolioImages(),
     businessSettings: createPostgresBusinessSettings(),
+    blockedTimes: createPostgresBlockedTimes(),
+    bookingSessions: createPostgresBookingSessions(),
     sms: createSmsVerifier(),
   };
 }
@@ -36,3 +40,5 @@ export function getDataAccess(): DataAccess {
   dataAccess ??= createDataAccess();
   return dataAccess;
 }
+
+export { DaConflictError, DaNotFoundError } from "@/da/postgres/errors";

@@ -13,6 +13,8 @@ export type CreateAppointmentRecord = {
   serviceId: ServiceId;
   startsAt: string;
   endsAt: string;
+  serviceNameAtBooking: string;
+  priceCentsAtBooking: number;
 };
 
 export type Appointments = {
@@ -21,9 +23,18 @@ export type Appointments = {
     startsAt: string,
     endsAt: string,
   ): Promise<readonly Appointment[]>;
+  listConfirmedOverlapping(
+    startsAt: string,
+    endsAt: string,
+  ): Promise<readonly Appointment[]>;
   create(input: CreateAppointmentRecord): Promise<Appointment>;
   updateStatus(
     id: AppointmentId,
     status: AppointmentStatus,
+  ): Promise<Appointment>;
+  updateSchedule(
+    id: AppointmentId,
+    startsAt: string,
+    endsAt: string,
   ): Promise<Appointment>;
 };

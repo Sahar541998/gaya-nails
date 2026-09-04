@@ -2,29 +2,27 @@ import "server-only";
 
 import { z } from "zod";
 
-import { DaNotFoundError, getDataAccess } from "@/da";
+import { getDataAccess } from "@/da";
 import { domainError, validationError } from "@/lib/errors";
-import { logger } from "@/lib/logger";
 import {
   canAccessCustomer,
   resolveActor,
   type Actor,
 } from "@/server/appointments/actor";
-import { isConfirmed } from "@/server/appointments/schedule";
 import type { Appointment, AppointmentId } from "@/types/domain";
 import type { Result } from "@/types/result";
 import { ok } from "@/types/result";
 
 const idSchema = z.string().uuid();
 
-export type CancelAppointmentInput = {
+export type GetAppointmentInput = {
   actor: Actor;
   appointmentId: AppointmentId;
   now?: Date;
 };
 
-export async function cancelAppointment(
-  input: CancelAppointmentInput,
+export async function getAppointment(
+  input: GetAppointmentInput,
 ): Promise<Result<Appointment>> {
   if (!idSchema.safeParse(input.appointmentId).success) {
     return validationError("Enter a valid appointment.");
@@ -50,33 +48,5 @@ export async function cancelAppointment(
     return domainError("NOT_AUTHORIZED", "You are not allowed to do that.");
   }
 
-  if (appointment.status === "cancelled") {
-    return ok(appointment);
-  }
-
-  if (!isConfirmed(appointment)) {
-    return domainError(
-      "APPOINTMENT_NOT_ACTIVE",
-      "That appointment cannot be cancelled.",
-    );
-  }
-
-  try {
-    const cancelled = await getDataAccess().appointments.updateStatus(
-      appointment.id,
-      "cancelled",
-    );
-    return ok(cancelled);
-  } catch (error) {
-    if (error instanceof DaNotFoundError) {
-      return domainError(
-        "APPOINTMENT_NOT_FOUND",
-        "That appointment was not found.",
-      );
-    }
-    logger.error("Failed to cancel appointment", {
-      reason: error instanceof Error ? error.name : "unknown",
-    });
-    return domainError("unavailable", "We could not cancel that appointment.");
-  }
+  return ok(appointment);
 }

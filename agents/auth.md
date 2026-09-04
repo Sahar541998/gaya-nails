@@ -7,7 +7,7 @@ No traditional customer account. Phone verification proves control of the number
 Domain API in `src/server/verification/`:
 
 - `sendPhoneVerification`
-- `verifyPhone`
+- `verifyPhone` — on success, issues a booking session token. Return `{ verificationToken, expiresAt }`. Never trust `phoneVerified: true` from the client.
 
 Those functions use `getDataAccess().sms` (`SmsVerifier`). They must not import Twilio.
 

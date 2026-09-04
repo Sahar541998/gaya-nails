@@ -1,6 +1,7 @@
 import "server-only";
 
 import { err, type Result } from "@/types/result";
+import type { AppErrorCode } from "@/types/result";
 
 export function notImplemented(operation: string): Result<never> {
   return err({
@@ -23,4 +24,11 @@ export function unauthorizedError(
     code: "unauthorized",
     message,
   });
+}
+
+export function domainError(
+  code: AppErrorCode,
+  message: string,
+): Result<never> {
+  return err({ code, message });
 }

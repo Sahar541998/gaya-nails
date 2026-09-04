@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { Appointments } from "@/da/appointments/appointments";
+import type { BlockedTimes } from "@/da/blocked-times/blocked-times";
+import type { BookingSessions } from "@/da/booking-sessions/booking-sessions";
 import type { BusinessSettingsStore } from "@/da/business-settings/business-settings";
 import type { Customers } from "@/da/customers/customers";
 import type { PortfolioImages } from "@/da/portfolio-images/portfolio-images";
@@ -13,5 +15,7 @@ export type DataAccess = {
   appointments: Appointments;
   portfolioImages: PortfolioImages;
   businessSettings: BusinessSettingsStore;
+  blockedTimes: BlockedTimes;
+  bookingSessions: BookingSessions;
   sms: SmsVerifier;
 };

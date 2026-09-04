@@ -4,7 +4,18 @@ export type AppErrorCode =
   | "validation"
   | "rate_limited"
   | "unavailable"
-  | "conflict";
+  | "conflict"
+  | "SERVICE_NOT_FOUND"
+  | "SERVICE_INACTIVE"
+  | "BOOKING_DISABLED"
+  | "INVALID_TIME"
+  | "OUTSIDE_BUSINESS_HOURS"
+  | "TIME_BLOCKED"
+  | "SLOT_UNAVAILABLE"
+  | "APPOINTMENT_NOT_FOUND"
+  | "NOT_AUTHORIZED"
+  | "APPOINTMENT_ALREADY_CANCELLED"
+  | "APPOINTMENT_NOT_ACTIVE";
 
 export type AppError = {
   code: AppErrorCode;

@@ -23,6 +23,7 @@ Read the topic file that matches the work:
 - [Database](agents/database.md)
 - [Server operations](agents/server.md)
 - [Auth and SMS](agents/auth.md)
+- [Appointments](agents/appointments.md)
 - [Docker](agents/docker.md)
 - [Performance](agents/performance.md)
 - [Lint and format](agents/lint-format.md)

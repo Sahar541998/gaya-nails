@@ -2,6 +2,7 @@ export type CustomerId = string;
 export type AppointmentId = string;
 export type ServiceId = string;
 export type PortfolioImageId = string;
+export type BlockedTimeId = string;
 
 export type Customer = {
   id: CustomerId;
@@ -26,6 +27,8 @@ export type Appointment = {
   startsAt: string;
   endsAt: string;
   status: AppointmentStatus;
+  serviceNameAtBooking: string;
+  priceCentsAtBooking: number;
 };
 
 export type PortfolioImage = {
@@ -35,6 +38,29 @@ export type PortfolioImage = {
   sortOrder: number;
 };
 
+export type DayHours = {
+  open: string;
+  close: string;
+};
+
+export type WeeklyHours = Partial<
+  Record<"0" | "1" | "2" | "3" | "4" | "5" | "6", DayHours>
+>;
+
 export type BusinessSettings = {
   timezone: string;
+  bookingEnabled: boolean;
+  slotIntervalMinutes: number;
+  weeklyHours: WeeklyHours;
+};
+
+export type BlockedTime = {
+  id: BlockedTimeId;
+  startsAt: string;
+  endsAt: string;
+};
+
+export type BookingSession = {
+  customerId: CustomerId;
+  expiresAt: string;
 };
