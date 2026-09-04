@@ -15,6 +15,8 @@ type BookingDatePagerProps = {
   page: number;
   onPageChange: (page: number) => void;
   onSelect: (date: string) => void;
+  previousLabel: string;
+  nextLabel: string;
 };
 
 export function weekPageCount(dateCount: number): number {
@@ -50,6 +52,8 @@ export function BookingDatePager({
   page,
   onPageChange,
   onSelect,
+  previousLabel,
+  nextLabel,
 }: BookingDatePagerProps) {
   const visible = datesForWeekPage(dates, page);
   const lastPage = Math.max(weekPageCount(dates.length) - 1, 0);
@@ -65,11 +69,11 @@ export function BookingDatePager({
         <button
           type="button"
           className="flex h-11 w-11 shrink-0 items-center justify-center text-lg leading-none text-ink/70 disabled:text-ink/20"
-          aria-label="Previous week"
+          aria-label={previousLabel}
           disabled={!canPrev}
           onClick={() => onPageChange(page - 1)}
         >
-          ‹
+          <span className="inline-block rtl:rotate-180">‹</span>
         </button>
         <div className="grid min-w-0 flex-1 grid-cols-7 gap-1">
           {Array.from({ length: DAYS_PER_PAGE }, (_, index) => {
@@ -94,7 +98,7 @@ export function BookingDatePager({
                 }`}
                 onClick={() => onSelect(item.date)}
               >
-                <span className="block text-[0.58rem] tracking-[0.12em] uppercase opacity-60">
+                <span className="block text-[0.58rem] opacity-60">
                   {item.weekdayLabel}
                 </span>
                 <span className="mt-0.5 block text-sm">{item.dayLabel}</span>
@@ -105,11 +109,11 @@ export function BookingDatePager({
         <button
           type="button"
           className="flex h-11 w-11 shrink-0 items-center justify-center text-lg leading-none text-ink/70 disabled:text-ink/20"
-          aria-label="Next week"
+          aria-label={nextLabel}
           disabled={!canNext}
           onClick={() => onPageChange(page + 1)}
         >
-          ›
+          <span className="inline-block rtl:rotate-180">›</span>
         </button>
       </div>
     </div>

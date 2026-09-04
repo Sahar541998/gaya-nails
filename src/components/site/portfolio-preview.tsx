@@ -2,10 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { GalleryItem } from "@/lib/public-media";
+import { labelTrackingClass, type Locale } from "@/i18n/locales";
+import type { Messages } from "@/i18n/messages";
 
 type PortfolioPreviewProps = {
   items: readonly GalleryItem[];
   isPlaceholder: boolean;
+  locale: Locale;
+  copy: Messages["work"];
+  workHref: string;
   showViewAll?: boolean;
   headingLevel?: "h1" | "h2";
 };
@@ -13,6 +18,9 @@ type PortfolioPreviewProps = {
 export function PortfolioPreview({
   items,
   isPlaceholder,
+  locale,
+  copy,
+  workHref,
   showViewAll = true,
   headingLevel = "h2",
 }: PortfolioPreviewProps) {
@@ -23,22 +31,23 @@ export function PortfolioPreview({
       className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24"
     >
       <div className="mb-8 flex items-end justify-between gap-4">
-        <Heading className="font-display text-3xl tracking-wide text-ink uppercase md:text-4xl">
-          My work
+        <Heading
+          className={`font-display text-3xl text-ink md:text-4xl ${labelTrackingClass(locale)}`}
+        >
+          {copy.title}
         </Heading>
         {showViewAll ? (
           <Link
-            href="/work"
-            className="text-sm tracking-[0.16em] text-ink/70 uppercase"
+            href={workHref}
+            className={`text-sm text-ink/70 ${labelTrackingClass(locale)}`}
           >
-            View all
+            {copy.viewAll}
           </Link>
         ) : null}
       </div>
       {isPlaceholder ? (
         <p className="mb-6 max-w-xl text-sm leading-6 text-ink/65">
-          Preview images only. Real studio photos will replace these when the
-          gallery is published.
+          {copy.placeholderNote}
         </p>
       ) : null}
       <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3 lg:gap-3">
@@ -50,7 +59,7 @@ export function PortfolioPreview({
             >
               <Image
                 src={item.src}
-                alt={item.alt}
+                alt={isPlaceholder ? copy.placeholderAlt : item.alt}
                 fill
                 sizes="(max-width: 768px) 50vw, 33vw"
                 className="object-cover"

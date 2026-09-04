@@ -1,8 +1,14 @@
 import Link from "next/link";
 
+import { interpolate } from "@/i18n/interpolate";
+import { eyebrowClass, type Locale } from "@/i18n/locales";
+import type { Messages } from "@/i18n/messages";
 import { formatDurationMinutes, formatIlsFromCents } from "@/lib/money";
 
 type BookingConfirmationProps = {
+  locale: Locale;
+  copy: Messages["book"];
+  homeHref: string;
   serviceName: string;
   dateLabel: string;
   timeLabel: string;
@@ -11,6 +17,9 @@ type BookingConfirmationProps = {
 };
 
 export function BookingConfirmation({
+  locale,
+  copy,
+  homeHref,
   serviceName,
   dateLabel,
   timeLabel,
@@ -19,17 +28,23 @@ export function BookingConfirmation({
 }: BookingConfirmationProps) {
   return (
     <section className="max-w-xl">
-      <p className="text-xs tracking-[0.28em] text-ink/60 uppercase">
-        Confirmed
+      <p className={`text-xs text-ink/60 ${eyebrowClass(locale)}`}>
+        {copy.confirmedEyebrow}
       </p>
       <h1 className="font-display mt-3 text-4xl text-ink md:text-5xl">
-        You’re booked.
+        {copy.confirmedTitle}
       </h1>
       <p className="mt-4 text-base leading-7 text-ink/70">
-        {`${serviceName} on ${dateLabel} at ${timeLabel}. ${formatDurationMinutes(durationMinutes)}, ${formatIlsFromCents(priceCents)}.`}
+        {interpolate(copy.confirmedSummary, {
+          serviceName,
+          date: dateLabel,
+          time: timeLabel,
+          duration: formatDurationMinutes(durationMinutes, locale),
+          price: formatIlsFromCents(priceCents),
+        })}
       </p>
-      <Link href="/" className="btn-primary mt-8">
-        Back home
+      <Link href={homeHref} className="btn-primary mt-8">
+        {copy.backHome}
       </Link>
     </section>
   );

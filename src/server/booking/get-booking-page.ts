@@ -1,5 +1,6 @@
 import "server-only";
 
+import { localeBcp47, type Locale } from "@/i18n/locales";
 import {
   formatDateChip,
   formatDateLong,
@@ -27,6 +28,7 @@ export type BookingPageData = {
 };
 
 export async function getBookingPageData(
+  locale: Locale = "en",
   now = new Date(),
 ): Promise<Result<BookingPageData>> {
   const [settings, servicesResult] = await Promise.all([
@@ -41,6 +43,7 @@ export async function getBookingPageData(
     now,
     28,
   );
+  const bcp47 = localeBcp47(locale);
 
   return ok({
     timezone: settings.timezone,
@@ -48,8 +51,8 @@ export async function getBookingPageData(
     services,
     openDates: dates.map((day) => ({
       date: day.date,
-      label: formatDateLong(day.date, settings.timezone),
-      ...formatDateChip(day.date, settings.timezone),
+      label: formatDateLong(day.date, settings.timezone, bcp47),
+      ...formatDateChip(day.date, settings.timezone, bcp47),
       bookable: day.bookable,
     })),
   });

@@ -1,10 +1,16 @@
 import Link from "next/link";
 
+import { eyebrowClass, type Locale } from "@/i18n/locales";
+import type { Messages } from "@/i18n/messages";
+
 type SiteFooterProps = {
   studioName: string;
   locationLabel: string;
   instagramUrl: string;
   year: number;
+  locale: Locale;
+  copy: Messages["footer"];
+  bookHref: string;
 };
 
 export function SiteFooter({
@@ -12,18 +18,23 @@ export function SiteFooter({
   locationLabel,
   instagramUrl,
   year,
+  locale,
+  copy,
+  bookHref,
 }: SiteFooterProps) {
   return (
     <footer className="border-t border-rose-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 md:flex-row md:items-end md:justify-between md:px-8">
         <div className="space-y-2">
-          <p className="font-display text-lg tracking-[0.24em] text-ink uppercase">
+          <p
+            className={`font-display text-lg text-ink ${eyebrowClass(locale)}`}
+          >
             {studioName}
           </p>
           {locationLabel.length > 0 ? (
             <p className="text-sm text-ink/65">{locationLabel}</p>
           ) : (
-            <p className="text-sm text-ink/45">Location coming soon</p>
+            <p className="text-sm text-ink/45">{copy.locationSoon}</p>
           )}
           {instagramUrl.length > 0 ? (
             <a
@@ -32,13 +43,13 @@ export function SiteFooter({
               rel="noopener noreferrer"
               target="_blank"
             >
-              Instagram
+              {copy.instagram}
             </a>
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-3 md:items-end">
-          <Link href="/book" className="btn-primary">
-            Book now
+          <Link href={bookHref} className="btn-primary">
+            {copy.bookNow}
           </Link>
           <p className="text-xs text-ink/45">
             © {year} {studioName}

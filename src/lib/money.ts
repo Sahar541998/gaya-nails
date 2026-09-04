@@ -1,3 +1,5 @@
+import type { Locale } from "@/i18n/locales";
+
 const MAX_PRICE_CENTS = 10_000_000;
 
 export function formatIlsFromCents(priceCents: number): string {
@@ -36,6 +38,12 @@ export function parseShekelsToCents(raw: string): number | null {
   return cents;
 }
 
-export function formatDurationMinutes(minutes: number): string {
-  return `${minutes} min`;
+export function formatDurationMinutes(
+  minutes: number,
+  locale: Locale = "en",
+): string {
+  if (locale === "he") {
+    return `${String(minutes)} דק׳`;
+  }
+  return `${String(minutes)} min`;
 }

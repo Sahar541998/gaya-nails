@@ -1,11 +1,25 @@
-import { PageIntro } from "@/components/page-intro";
+import { notFound } from "next/navigation";
 
-export default function ManagePage() {
+import { PageIntro } from "@/components/page-intro";
+import { isLocale } from "@/i18n/locales";
+import { getMessages } from "@/i18n/messages";
+
+export default async function ManagePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: localeParam } = await params;
+  if (!isLocale(localeParam)) {
+    notFound();
+  }
+  const copy = getMessages(localeParam);
+
   return (
     <main id="main">
       <PageIntro
-        title="Manage appointment"
-        description="Appointment management is not available yet. Studio owners sign in at /admin."
+        title={copy.manage.title}
+        description={copy.manage.description}
       />
     </main>
   );

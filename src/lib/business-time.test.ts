@@ -128,5 +128,8 @@ describe("business time", () => {
       dayLabel: "6",
       monthLabel: "Sept",
     });
+    expect(
+      formatDateChip("2026-09-06", BUSINESS_TIME_ZONE, "he-IL").dayLabel,
+    ).toBe("6");
   });
 });

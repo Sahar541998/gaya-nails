@@ -175,12 +175,16 @@ export function toDateTimeLocalInput(iso: string, timeZone: string): string {
   return value.toFormat("yyyy-MM-dd'T'HH:mm");
 }
 
-export function formatDateLong(isoOrDate: string, timeZone: string): string {
+export function formatDateLong(
+  isoOrDate: string,
+  timeZone: string,
+  locale = "en-GB",
+): string {
   const value = zonedDateFromInput(isoOrDate, timeZone);
   if (value === null) {
     return isoOrDate;
   }
-  return value.toFormat("ccc d LLL yyyy");
+  return value.setLocale(locale).toFormat("ccc d LLL yyyy");
 }
 
 export type DateChipLabels = {
@@ -192,6 +196,7 @@ export type DateChipLabels = {
 export function formatDateChip(
   isoOrDate: string,
   timeZone: string,
+  locale = "en-GB",
 ): DateChipLabels {
   const value = zonedDateFromInput(isoOrDate, timeZone);
   if (value === null) {
@@ -201,10 +206,11 @@ export function formatDateChip(
       monthLabel: "",
     };
   }
+  const localized = value.setLocale(locale);
   return {
-    weekdayLabel: value.toFormat("ccc"),
-    dayLabel: value.toFormat("d"),
-    monthLabel: value.toFormat("LLL"),
+    weekdayLabel: localized.toFormat("ccc"),
+    dayLabel: localized.toFormat("d"),
+    monthLabel: localized.toFormat("LLL"),
   };
 }
 

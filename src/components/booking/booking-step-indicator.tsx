@@ -10,7 +10,7 @@ export function BookingStepIndicator({
   onSelect,
 }: BookingStepIndicatorProps) {
   return (
-    <ol className="flex flex-wrap gap-x-4 gap-y-2 text-xs tracking-[0.16em] text-ink/45 uppercase">
+    <ol className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink/45">
       {steps.map((label, index) => {
         const isCurrent = index === current;
         const isDone = index < current;
@@ -26,7 +26,7 @@ export function BookingStepIndicator({
             {canSelect ? (
               <button
                 type="button"
-                className="tracking-[0.16em] uppercase"
+                className="uppercase tracking-[0.16em] rtl:tracking-normal rtl:normal-case"
                 onClick={() => onSelect(index)}
               >
                 {String(index + 1).padStart(2, "0")} {label}

@@ -1,48 +1,60 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Fraunces, Outfit } from "next/font/google";
+import { Heebo } from "next/font/google";
+import { headers } from "next/headers";
+
+import { isLocale, localeDir, type Locale } from "@/i18n/locales";
+import { getMessages } from "@/i18n/messages";
+
 import "./globals.css";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
+const heebo = Heebo({
+  variable: "--font-heebo",
+  subsets: ["latin", "hebrew"],
+  display: "swap",
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-});
+function localeFromRequest(headerLocale: string | null): Locale {
+  return isLocale(headerLocale) ? headerLocale : "en";
+}
 
-export const metadata: Metadata = {
-  title: {
-    default: "Gaya — Nail artist",
-    template: "%s · Gaya",
-  },
-  description:
-    "Nail artist studio. Gel, builder gel, and nail art. Book your next set.",
-  openGraph: {
-    title: "Gaya — Nail artist",
-    description:
-      "Nail artist studio. Gel, builder gel, and nail art. Book your next set.",
-    type: "website",
-    images: [
-      {
-        url: "/media/placeholders/hero.png",
-        alt: "Placeholder photograph of a manicure",
-      },
-    ],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headerList = await headers();
+  const locale = localeFromRequest(headerList.get("x-locale"));
+  const copy = getMessages(locale);
+  return {
+    title: {
+      default: copy.meta.titleDefault,
+      template: copy.meta.titleTemplate,
+    },
+    description: copy.meta.description,
+    openGraph: {
+      title: copy.meta.titleDefault,
+      description: copy.meta.description,
+      type: "website",
+      images: [
+        {
+          url: "/media/placeholders/hero.png",
+          alt: copy.hero.imageAlt,
+        },
+      ],
+    },
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const headerList = await headers();
+  const locale = localeFromRequest(headerList.get("x-locale"));
+
   return (
     <html
-      lang="en"
-      className={`${outfit.variable} ${fraunces.variable} h-full antialiased`}
+      lang={locale}
+      dir={localeDir(locale)}
+      className={`${heebo.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-cream text-ink">
         {children}

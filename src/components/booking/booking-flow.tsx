@@ -7,15 +7,15 @@ import {
   sendBookingCodeAction,
   submitBookingAction,
   verifyBookingPhoneAction,
-} from "@/app/(public)/book/actions";
+} from "@/server/booking/customer-actions";
 import { BookingConfirmation } from "@/components/booking/booking-confirmation";
 import { BookingDatePager } from "@/components/booking/booking-date-pager";
 import { BookingStepIndicator } from "@/components/booking/booking-step-indicator";
 import { BookingSummary } from "@/components/booking/booking-summary";
+import { eyebrowClass, type Locale } from "@/i18n/locales";
+import type { Messages } from "@/i18n/messages";
 import { formatDurationMinutes, formatIlsFromCents } from "@/lib/money";
 import type { Service } from "@/types/domain";
-
-const STEPS = ["Service", "Time", "Details", "Review"] as const;
 
 type OpenDate = {
   date: string;
@@ -32,7 +32,12 @@ type SlotOption = {
   timeLabel: string;
 };
 
+type BookingCopy = Messages["book"];
+
 type BookingFlowProps = {
+  locale: Locale;
+  copy: BookingCopy;
+  homeHref: string;
   services: readonly Service[];
   openDates: readonly OpenDate[];
   timezone: string;
@@ -52,7 +57,30 @@ type FieldErrors = {
 
 const EMPTY_SLOTS: readonly SlotOption[] = [];
 
+function actionMessage(copy: BookingCopy, code: string | undefined): string {
+  switch (code) {
+    case "unauthorized":
+    case "validation":
+    case "rate_limited":
+    case "unavailable":
+    case "conflict":
+    case "SLOT_UNAVAILABLE":
+    case "TIME_BLOCKED":
+    case "INVALID_TIME":
+    case "BOOKING_DISABLED":
+    case "SERVICE_NOT_FOUND":
+    case "SERVICE_INACTIVE":
+    case "OUTSIDE_BUSINESS_HOURS":
+      return copy.errors[code];
+    default:
+      return copy.errors.generic;
+  }
+}
+
 export function BookingFlow({
+  locale,
+  copy,
+  homeHref,
   services,
   openDates,
   timezone,
@@ -61,6 +89,12 @@ export function BookingFlow({
   initialSlots = EMPTY_SLOTS,
   initialSlotsMessage = "",
 }: BookingFlowProps) {
+  const steps = [
+    copy.steps.service,
+    copy.steps.time,
+    copy.steps.details,
+    copy.steps.review,
+  ];
   const presetService =
     initialServiceId !== undefined &&
     services.some((item) => item.id === initialServiceId)
@@ -120,15 +154,11 @@ export function BookingFlow({
         setSlotsLoading(false);
         if (!result.ok) {
           setSlots([]);
-          setSlotsMessage(result.message);
+          setSlotsMessage(actionMessage(copy, result.code));
           return;
         }
         setSlots(result.data);
-        setSlotsMessage(
-          result.data.length === 0
-            ? "No times are open on this day. Try another date."
-            : "",
-        );
+        setSlotsMessage(result.data.length === 0 ? copy.noTimes : "");
       })
       .catch(() => {
         if (requestId !== slotsRequestRef.current) {
@@ -136,7 +166,7 @@ export function BookingFlow({
         }
         setSlotsLoading(false);
         setSlots([]);
-        setSlotsMessage("We could not load times. Try another date.");
+        setSlotsMessage(copy.loadTimesFailed);
       });
   }
 
@@ -169,16 +199,16 @@ export function BookingFlow({
   function validateDetails(): boolean {
     const next: FieldErrors = {};
     if (displayName.trim().length < 2) {
-      next.displayName = "Enter your name.";
+      next.displayName = copy.nameInvalid;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      next.email = "Enter a valid email address.";
+      next.email = copy.emailInvalid;
     }
     if (phone.trim().length < 8) {
-      next.phone = "Enter a valid phone number.";
+      next.phone = copy.phoneInvalid;
     }
     if (note.length > 500) {
-      next.note = "Keep the note under 500 characters.";
+      next.note = copy.noteInvalid;
     }
     setFieldErrors(next);
     return Object.keys(next).length === 0;
@@ -192,7 +222,7 @@ export function BookingFlow({
     startTransition(async () => {
       const result = await sendBookingCodeAction(phone);
       if (!result.ok) {
-        setFormError(result.message);
+        setFormError(actionMessage(copy, result.code));
         return;
       }
       setCodeSent(true);
@@ -204,7 +234,7 @@ export function BookingFlow({
     if (code.trim().length < 4) {
       setFieldErrors((current) => ({
         ...current,
-        code: "Enter the code from your message.",
+        code: copy.codeInvalid,
       }));
       return;
     }
@@ -212,7 +242,10 @@ export function BookingFlow({
     startTransition(async () => {
       const result = await verifyBookingPhoneAction(phone, code);
       if (!result.ok) {
-        setFieldErrors((current) => ({ ...current, code: result.message }));
+        setFieldErrors((current) => ({
+          ...current,
+          code: actionMessage(copy, result.code),
+        }));
         return;
       }
       setFieldErrors((current) => {
@@ -240,7 +273,7 @@ export function BookingFlow({
         note,
       });
       if (!result.ok) {
-        setFormError(result.message);
+        setFormError(actionMessage(copy, result.code));
         if (
           result.code === "SLOT_UNAVAILABLE" ||
           result.code === "TIME_BLOCKED" ||
@@ -264,29 +297,36 @@ export function BookingFlow({
   if (confirmation !== null) {
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-20">
-        <BookingConfirmation {...confirmation} />
+        <BookingConfirmation
+          locale={locale}
+          copy={copy}
+          homeHref={homeHref}
+          {...confirmation}
+        />
       </div>
     );
   }
 
   const timeHint =
     date === null
-      ? "Pick a date to see open times."
+      ? copy.pickDateHint
       : slot === null && slots.length > 0
-        ? "Pick a time to continue."
+        ? copy.pickTimeHint
         : "";
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-20">
-      <p className="text-xs tracking-[0.28em] text-ink/60 uppercase">Book</p>
+      <p className={`text-xs text-ink/60 ${eyebrowClass(locale)}`}>
+        {copy.eyebrow}
+      </p>
       <h1 className="font-display mt-3 text-4xl text-ink md:text-5xl">
-        Your next set
+        {copy.heading}
       </h1>
       <p className="mt-4 max-w-xl text-base leading-7 text-ink/70">
-        Choose a service, pick an open time, and we’ll confirm your appointment.
+        {copy.intro}
       </p>
       <div className="mt-8">
-        <BookingStepIndicator steps={STEPS} current={step} onSelect={setStep} />
+        <BookingStepIndicator steps={steps} current={step} onSelect={setStep} />
       </div>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
@@ -300,10 +340,10 @@ export function BookingFlow({
           {step === 0 ? (
             <div>
               <h2 className="font-display text-2xl text-ink">
-                Choose a service
+                {copy.chooseServiceTitle}
               </h2>
               <p className="mt-2 text-sm text-ink/60">
-                Tap a service to see available times.
+                {copy.chooseServiceHint}
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 {services.map((item) => {
@@ -313,7 +353,7 @@ export function BookingFlow({
                       key={item.id}
                       type="button"
                       aria-pressed={selected}
-                      className={`flex w-full flex-col gap-1 border px-4 py-5 text-left touch-manipulation ${
+                      className={`flex w-full flex-col gap-1 border px-4 py-5 text-start touch-manipulation ${
                         selected
                           ? "border-ink bg-blush/70"
                           : "border-rose-line bg-white"
@@ -331,13 +371,11 @@ export function BookingFlow({
                           {item.shortDescription}
                         </span>
                       ) : null}
-                      <span className="mt-2 flex items-center justify-between gap-3 text-xs tracking-wide text-ink/50 uppercase">
+                      <span className="mt-2 flex items-center justify-between gap-3 text-xs text-ink/50">
                         <span>
-                          {formatDurationMinutes(item.durationMinutes)}
+                          {formatDurationMinutes(item.durationMinutes, locale)}
                         </span>
-                        <span className="tracking-[0.16em] text-ink">
-                          Select
-                        </span>
+                        <span className="text-ink">{copy.select}</span>
                       </span>
                     </button>
                   );
@@ -349,16 +387,14 @@ export function BookingFlow({
           {step === 1 ? (
             <div>
               <h2 className="font-display text-2xl text-ink">
-                Choose a date and time
+                {copy.chooseTimeTitle}
               </h2>
               <p className="mt-2 text-sm text-ink/60">
-                Open studio hours only.
+                {copy.chooseTimeHint}
                 <span className="sr-only"> {timezone}</span>
               </p>
               {openDates.every((item) => !item.bookable) ? (
-                <p className="mt-6 text-sm text-ink/65">
-                  No booking dates are open right now.
-                </p>
+                <p className="mt-6 text-sm text-ink/65">{copy.noDates}</p>
               ) : (
                 <BookingDatePager
                   dates={openDates}
@@ -366,11 +402,13 @@ export function BookingFlow({
                   page={datePage}
                   onPageChange={setDatePage}
                   onSelect={selectDate}
+                  previousLabel={copy.previousWeek}
+                  nextLabel={copy.nextWeek}
                 />
               )}
               <div className="mt-8" aria-live="polite">
                 {slotsLoading ? (
-                  <p className="text-sm text-ink/60">Loading times…</p>
+                  <p className="text-sm text-ink/60">{copy.loadingTimes}</p>
                 ) : null}
                 {slotsMessage.length > 0 ? (
                   <p className="text-sm text-ink/65">{slotsMessage}</p>
@@ -407,7 +445,7 @@ export function BookingFlow({
                   className="btn-secondary"
                   onClick={() => setStep(0)}
                 >
-                  Back
+                  {copy.back}
                 </button>
                 <button
                   type="button"
@@ -415,7 +453,7 @@ export function BookingFlow({
                   disabled={slot === null}
                   onClick={() => setStep(2)}
                 >
-                  Continue
+                  {copy.continue}
                 </button>
               </div>
             </div>
@@ -437,13 +475,13 @@ export function BookingFlow({
                 setStep(3);
               }}
             >
-              <h2 className="font-display text-2xl text-ink">Your details</h2>
-              <p className="text-sm text-ink/60">
-                We’ll text a short code to confirm it’s you.
-              </p>
+              <h2 className="font-display text-2xl text-ink">
+                {copy.detailsTitle}
+              </h2>
+              <p className="text-sm text-ink/60">{copy.detailsHint}</p>
               <div>
                 <label htmlFor="booking-name" className="text-sm text-ink">
-                  Name
+                  {copy.name}
                 </label>
                 <input
                   id="booking-name"
@@ -471,7 +509,7 @@ export function BookingFlow({
               </div>
               <div>
                 <label htmlFor="booking-email" className="text-sm text-ink">
-                  Email
+                  {copy.email}
                 </label>
                 <input
                   id="booking-email"
@@ -501,7 +539,7 @@ export function BookingFlow({
               </div>
               <div>
                 <label htmlFor="booking-phone" className="text-sm text-ink">
-                  Phone
+                  {copy.phone}
                 </label>
                 <input
                   id="booking-phone"
@@ -538,13 +576,14 @@ export function BookingFlow({
                     id="booking-phone-hint"
                     className="mt-1 text-sm text-ink/50"
                   >
-                    Israeli mobile numbers work with or without +972.
+                    {copy.phoneHint}
                   </p>
                 )}
               </div>
               <div>
                 <label htmlFor="booking-note" className="text-sm text-ink">
-                  Note <span className="text-ink/50">(optional)</span>
+                  {copy.note}{" "}
+                  <span className="text-ink/50">{copy.optional}</span>
                 </label>
                 <textarea
                   id="booking-note"
@@ -572,7 +611,7 @@ export function BookingFlow({
               {codeSent && !phoneVerified ? (
                 <div>
                   <label htmlFor="booking-code" className="text-sm text-ink">
-                    Verification code
+                    {copy.verificationCode}
                   </label>
                   <input
                     id="booking-code"
@@ -602,13 +641,13 @@ export function BookingFlow({
                       id="booking-code-hint"
                       className="mt-1 text-sm text-ink/50"
                     >
-                      Enter the code we sent, then continue.
+                      {copy.codeHint}
                     </p>
                   )}
                 </div>
               ) : null}
               {phoneVerified ? (
-                <p className="text-sm text-ink/70">Phone number confirmed.</p>
+                <p className="text-sm text-ink/70">{copy.phoneConfirmed}</p>
               ) : null}
               <div className="mt-2 flex flex-wrap gap-3">
                 <button
@@ -616,7 +655,7 @@ export function BookingFlow({
                   className="btn-secondary"
                   onClick={() => setStep(1)}
                 >
-                  Back
+                  {copy.back}
                 </button>
                 <button
                   type="submit"
@@ -624,14 +663,14 @@ export function BookingFlow({
                   disabled={pending}
                 >
                   {phoneVerified
-                    ? "Continue"
+                    ? copy.continue
                     : codeSent
                       ? pending
-                        ? "Verifying…"
-                        : "Verify"
+                        ? copy.verifying
+                        : copy.verify
                       : pending
-                        ? "Sending…"
-                        : "Send code"}
+                        ? copy.sending
+                        : copy.sendCode}
                 </button>
                 {codeSent && !phoneVerified ? (
                   <button
@@ -640,7 +679,7 @@ export function BookingFlow({
                     disabled={pending}
                     onClick={sendCode}
                   >
-                    Resend code
+                    {copy.resendCode}
                   </button>
                 ) : null}
               </div>
@@ -649,12 +688,14 @@ export function BookingFlow({
 
           {step === 3 ? (
             <div>
-              <h2 className="font-display text-2xl text-ink">Review</h2>
-              <p className="mt-2 text-sm text-ink/65">
-                Confirm the service, time, and your details before booking.
-              </p>
+              <h2 className="font-display text-2xl text-ink">
+                {copy.reviewTitle}
+              </h2>
+              <p className="mt-2 text-sm text-ink/65">{copy.reviewHint}</p>
               <div className="mt-6 max-w-md lg:hidden">
                 <BookingSummary
+                  locale={locale}
+                  copy={copy}
                   service={service}
                   dateLabel={dateLabel}
                   timeLabel={timeLabel}
@@ -670,7 +711,7 @@ export function BookingFlow({
                   className="btn-secondary"
                   onClick={() => setStep(2)}
                 >
-                  Back
+                  {copy.back}
                 </button>
                 <button
                   type="button"
@@ -678,7 +719,7 @@ export function BookingFlow({
                   disabled={pending || slot === null || !phoneVerified}
                   onClick={submitBooking}
                 >
-                  {pending ? "Booking…" : "Confirm booking"}
+                  {pending ? copy.booking : copy.confirm}
                 </button>
               </div>
             </div>
@@ -692,6 +733,8 @@ export function BookingFlow({
           }
         >
           <BookingSummary
+            locale={locale}
+            copy={copy}
             service={service}
             dateLabel={dateLabel}
             timeLabel={timeLabel}

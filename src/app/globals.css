@@ -16,8 +16,8 @@
   --color-ink: var(--ink);
   --color-white: var(--white);
   --color-rose-line: var(--rose-line);
-  --font-sans: var(--font-outfit);
-  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-heebo);
+  --font-display: var(--font-heebo);
 }
 
 html {
@@ -34,12 +34,12 @@ summary {
 body {
   background: var(--cream);
   color: var(--ink);
-  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-family: var(--font-heebo), system-ui, sans-serif;
 }
 
 .font-display {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 450;
+  font-family: var(--font-heebo), system-ui, sans-serif;
+  font-weight: 500;
 }
 
 a:focus-visible,
@@ -90,6 +90,14 @@ label:has(:focus-visible) {
   text-transform: uppercase;
 }
 
+html[lang="he"] .btn-primary,
+html[lang="he"] .btn-secondary {
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
 .field-input {
   width: 100%;
   border: 1px solid var(--rose-line);
@@ -105,7 +113,7 @@ label:has(:focus-visible) {
 
 .skip-link {
   position: absolute;
-  left: 1rem;
+  inset-inline-start: 1rem;
   top: -3rem;
   z-index: 50;
   background: var(--ink);

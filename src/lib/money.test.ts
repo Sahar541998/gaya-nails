@@ -26,5 +26,6 @@ describe("money", () => {
 
   it("formats duration", () => {
     expect(formatDurationMinutes(90)).toBe("90 min");
+    expect(formatDurationMinutes(90, "he")).toBe("90 דק׳");
   });
 });
