@@ -44,11 +44,11 @@ export function SiteHeader({
           <Link href="/book" className="btn-primary">
             Book now
           </Link>
-          <details className="relative md:hidden">
+          <details className="group relative z-30 md:hidden">
             <summary className="cursor-pointer list-none rounded-sm px-2 py-1 text-sm tracking-wide text-ink ring-ink/40 focus-visible:ring-2">
               Menu
             </summary>
-            <div className="absolute right-0 mt-3 w-44 border border-rose-line bg-cream p-3 shadow-sm">
+            <div className="absolute right-0 z-30 mt-3 hidden w-44 border border-rose-line bg-cream p-3 shadow-sm group-open:block">
               <nav className="flex flex-col gap-3 text-sm" aria-label="Mobile">
                 {navItems.map((item) => (
                   <Link

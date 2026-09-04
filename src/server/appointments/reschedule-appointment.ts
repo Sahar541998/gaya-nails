@@ -14,7 +14,7 @@ import {
   assertBookableWindow,
   endsAtFromDuration,
   isConfirmed,
-  loadActiveService,
+  loadService,
   parseAppointmentStart,
 } from "@/server/appointments/schedule";
 import type { Appointment, AppointmentId } from "@/types/domain";
@@ -87,7 +87,7 @@ export async function rescheduleAppointment(
     return startsAt;
   }
 
-  const service = await loadActiveService(appointment.serviceId);
+  const service = await loadService(appointment.serviceId);
   if (!service.ok) {
     return service;
   }
@@ -102,6 +102,7 @@ export async function rescheduleAppointment(
     settings,
     now,
     ignoreAppointmentId: appointment.id,
+    requireBookingEnabled: actor.data.role !== "admin",
   });
   if (!window.ok) {
     return window;

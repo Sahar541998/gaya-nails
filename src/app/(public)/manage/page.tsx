@@ -5,7 +5,7 @@ export default function ManagePage() {
     <main id="main">
       <PageIntro
         title="Manage appointment"
-        description="Appointment management is not available yet."
+        description="Appointment management is not available yet. Studio owners sign in at /admin."
       />
     </main>
   );

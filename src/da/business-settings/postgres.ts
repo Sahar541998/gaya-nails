@@ -84,5 +84,29 @@ export function createPostgresBusinessSettings(): BusinessSettingsStore {
       }
       return mapBusinessSettings(row);
     },
+
+    async update(settings) {
+      const rows = await sql<BusinessSettingsRow[]>`
+        update public.business_settings
+        set
+          timezone = ${settings.timezone},
+          booking_enabled = ${settings.bookingEnabled},
+          slot_interval_minutes = ${settings.slotIntervalMinutes},
+          weekly_hours = ${sql.json(settings.weeklyHours)},
+          studio_name = ${settings.studioName},
+          location_label = ${settings.locationLabel},
+          instagram_url = ${settings.instagramUrl},
+          updated_at = now()
+        where id = true
+        returning
+          timezone, booking_enabled, slot_interval_minutes, weekly_hours,
+          studio_name, location_label, instagram_url
+      `;
+      const row = rows[0];
+      if (row === undefined) {
+        throw new Error("Failed to update business settings.");
+      }
+      return mapBusinessSettings(row);
+    },
   };
 }

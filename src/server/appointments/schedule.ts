@@ -41,17 +41,25 @@ export function endsAtFromDuration(
   return addMinutes(startsAtIso, durationMinutes);
 }
 
-export async function loadActiveService(
-  serviceId: string,
-): Promise<Result<Service>> {
+export async function loadService(serviceId: string): Promise<Result<Service>> {
   const service = await getDataAccess().services.getById(serviceId);
   if (service === null) {
     return domainError("SERVICE_NOT_FOUND", "That service is not available.");
   }
-  if (!service.isActive) {
+  return ok(service);
+}
+
+export async function loadActiveService(
+  serviceId: string,
+): Promise<Result<Service>> {
+  const service = await loadService(serviceId);
+  if (!service.ok) {
+    return service;
+  }
+  if (!service.data.isActive) {
     return domainError("SERVICE_INACTIVE", "That service is not available.");
   }
-  return ok(service);
+  return ok(service.data);
 }
 
 export async function assertBookableWindow(input: {
@@ -60,10 +68,11 @@ export async function assertBookableWindow(input: {
   settings: BusinessSettings;
   now: Date;
   ignoreAppointmentId?: AppointmentId;
+  requireBookingEnabled?: boolean;
 }): Promise<Result<{ startsAtIso: string; endsAtIso: string }>> {
   const { startsAtIso, endsAtIso, settings, now } = input;
 
-  if (!settings.bookingEnabled) {
+  if (input.requireBookingEnabled !== false && !settings.bookingEnabled) {
     return domainError(
       "BOOKING_DISABLED",
       "Booking is not available right now.",

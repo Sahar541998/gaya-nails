@@ -2,14 +2,22 @@ import type { Metadata } from "next";
 
 import { BookingFlow } from "@/components/booking/booking-flow";
 import { getBookingPageData } from "@/server/booking/get-booking-page";
+import { getBookingSlots } from "@/server/booking/get-booking-slots";
 
 export const metadata: Metadata = {
   title: "Book",
   description: "Book a nail appointment with Gaya.",
 };
 
-export default async function BookPage() {
+export default async function BookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ service?: string | string[] }>;
+}) {
   const page = await getBookingPageData();
+  const query = await searchParams;
+  const requested =
+    typeof query.service === "string" ? query.service : undefined;
   const data = page.ok
     ? page.data
     : {
@@ -18,6 +26,34 @@ export default async function BookPage() {
         openDates: [],
         timezone: "",
       };
+  const initialServiceId = data.services.some((item) => item.id === requested)
+    ? requested
+    : undefined;
+  const firstDate = data.openDates.find((item) => item.bookable);
+  let initialDate: string | undefined;
+  let initialSlots: readonly {
+    startsAt: string;
+    endsAt: string;
+    timeLabel: string;
+  }[] = [];
+  let initialSlotsMessage = "";
+
+  if (initialServiceId !== undefined && firstDate !== undefined) {
+    initialDate = firstDate.date;
+    const slots = await getBookingSlots({
+      serviceId: initialServiceId,
+      date: firstDate.date,
+    });
+    if (slots.ok) {
+      initialSlots = slots.data;
+      if (slots.data.length === 0) {
+        initialSlotsMessage =
+          "No times are open on this day. Try another date.";
+      }
+    } else {
+      initialSlotsMessage = slots.error.message;
+    }
+  }
 
   return (
     <main id="main">
@@ -40,6 +76,10 @@ export default async function BookPage() {
           services={data.services}
           openDates={data.openDates}
           timezone={data.timezone}
+          initialSlots={initialSlots}
+          initialSlotsMessage={initialSlotsMessage}
+          {...(initialServiceId === undefined ? {} : { initialServiceId })}
+          {...(initialDate === undefined ? {} : { initialDate })}
         />
       )}
     </main>

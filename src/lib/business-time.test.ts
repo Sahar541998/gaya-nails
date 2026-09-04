@@ -5,6 +5,8 @@ import {
   addMinutes,
   BUSINESS_TIME_ZONE,
   DEFAULT_WEEKLY_HOURS,
+  formatDateChip,
+  listLocalDateWindow,
   listOpenLocalDates,
   parseInstant,
   rangesOverlap,
@@ -75,5 +77,56 @@ describe("business time", () => {
     );
     expect(dates).toContain("2099-06-14");
     expect(dates).not.toContain("2099-06-20");
+  });
+
+  it("skips a day after closing time", () => {
+    const now = DateTime.fromObject(
+      { year: 2099, month: 6, day: 19, hour: 15 },
+      { zone: BUSINESS_TIME_ZONE },
+    ).toJSDate();
+    const dates = listOpenLocalDates(
+      DEFAULT_WEEKLY_HOURS,
+      BUSINESS_TIME_ZONE,
+      now,
+      3,
+    );
+    expect(dates).not.toContain("2099-06-19");
+    expect(dates).toContain("2099-06-21");
+  });
+
+  it("keeps a consecutive 7-day window and marks closed days", () => {
+    const now = DateTime.fromObject(
+      { year: 2099, month: 6, day: 14, hour: 8 },
+      { zone: BUSINESS_TIME_ZONE },
+    ).toJSDate();
+    const window = listLocalDateWindow(
+      DEFAULT_WEEKLY_HOURS,
+      BUSINESS_TIME_ZONE,
+      now,
+      7,
+    );
+    expect(window.map((day) => day.date)).toEqual([
+      "2099-06-14",
+      "2099-06-15",
+      "2099-06-16",
+      "2099-06-17",
+      "2099-06-18",
+      "2099-06-19",
+      "2099-06-20",
+    ]);
+    expect(window.find((day) => day.date === "2099-06-20")?.bookable).toBe(
+      false,
+    );
+    expect(window.find((day) => day.date === "2099-06-14")?.bookable).toBe(
+      true,
+    );
+  });
+
+  it("formats compact date chips in the business timezone", () => {
+    expect(formatDateChip("2026-09-06", BUSINESS_TIME_ZONE)).toEqual({
+      weekdayLabel: "Sun",
+      dayLabel: "6",
+      monthLabel: "Sept",
+    });
   });
 });

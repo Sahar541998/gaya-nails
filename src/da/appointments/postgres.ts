@@ -149,5 +149,36 @@ export function createPostgresAppointments(): Appointments {
         return rethrowMappedPostgresError(error);
       }
     },
+
+    async updateDetails(id, input) {
+      try {
+        const rows = await sql<AppointmentRow[]>`
+          update public.appointments
+          set
+            customer_id = ${input.customerId},
+            service_id = ${input.serviceId},
+            starts_at = ${input.startsAt},
+            ends_at = ${input.endsAt},
+            service_name_at_booking = ${input.serviceNameAtBooking},
+            price_cents_at_booking = ${input.priceCentsAtBooking},
+            note = ${input.note}
+          where id = ${id}
+            and status = 'confirmed'
+          returning
+            id, customer_id, service_id, starts_at, ends_at, status,
+            service_name_at_booking, price_cents_at_booking, note
+        `;
+        const row = rows[0];
+        if (row === undefined) {
+          throw new DaNotFoundError("Appointment not found.");
+        }
+        return mapAppointment(row);
+      } catch (error) {
+        if (error instanceof DaNotFoundError) {
+          throw error;
+        }
+        return rethrowMappedPostgresError(error);
+      }
+    },
   };
 }

@@ -15,7 +15,8 @@ export type AppErrorCode =
   | "APPOINTMENT_NOT_FOUND"
   | "NOT_AUTHORIZED"
   | "APPOINTMENT_ALREADY_CANCELLED"
-  | "APPOINTMENT_NOT_ACTIVE";
+  | "APPOINTMENT_NOT_ACTIVE"
+  | "SERVICE_IN_USE";
 
 export type AppError = {
   code: AppErrorCode;

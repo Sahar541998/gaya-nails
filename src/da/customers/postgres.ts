@@ -2,6 +2,7 @@ import "server-only";
 
 import type { CustomerContact, Customers } from "@/da/customers/customers";
 import { getSql } from "@/da/postgres/client";
+import { rethrowMappedPostgresError } from "@/da/postgres/errors";
 import { toIso } from "@/da/postgres/iso";
 import type { Customer } from "@/types/domain";
 
@@ -78,6 +79,24 @@ export function createPostgresCustomers(): Customers {
         throw new Error("Failed to update customer.");
       }
       return mapCustomer(row);
+    },
+
+    async updatePhone(id, phoneE164) {
+      try {
+        const rows = await sql<CustomerRow[]>`
+          update public.customers
+          set phone_e164 = ${phoneE164}
+          where id = ${id}
+          returning id, phone_e164, display_name, email, created_at
+        `;
+        const row = rows[0];
+        if (row === undefined) {
+          throw new Error("Failed to update customer phone.");
+        }
+        return mapCustomer(row);
+      } catch (error) {
+        return rethrowMappedPostgresError(error);
+      }
     },
   };
 }

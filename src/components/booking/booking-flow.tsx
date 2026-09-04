@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 
 import {
   loadBookingSlotsAction,
@@ -9,6 +9,7 @@ import {
   verifyBookingPhoneAction,
 } from "@/app/(public)/book/actions";
 import { BookingConfirmation } from "@/components/booking/booking-confirmation";
+import { BookingDatePager } from "@/components/booking/booking-date-pager";
 import { BookingStepIndicator } from "@/components/booking/booking-step-indicator";
 import { BookingSummary } from "@/components/booking/booking-summary";
 import { formatDurationMinutes, formatIlsFromCents } from "@/lib/money";
@@ -19,6 +20,10 @@ const STEPS = ["Service", "Time", "Details", "Review"] as const;
 type OpenDate = {
   date: string;
   label: string;
+  weekdayLabel: string;
+  dayLabel: string;
+  monthLabel: string;
+  bookable: boolean;
 };
 
 type SlotOption = {
@@ -31,6 +36,10 @@ type BookingFlowProps = {
   services: readonly Service[];
   openDates: readonly OpenDate[];
   timezone: string;
+  initialServiceId?: string;
+  initialDate?: string;
+  initialSlots?: readonly SlotOption[];
+  initialSlotsMessage?: string;
 };
 
 type FieldErrors = {
@@ -41,17 +50,29 @@ type FieldErrors = {
   code?: string;
 };
 
+const EMPTY_SLOTS: readonly SlotOption[] = [];
+
 export function BookingFlow({
   services,
   openDates,
   timezone,
+  initialServiceId,
+  initialDate,
+  initialSlots = EMPTY_SLOTS,
+  initialSlotsMessage = "",
 }: BookingFlowProps) {
-  const [step, setStep] = useState(0);
-  const [serviceId, setServiceId] = useState<string | null>(null);
-  const [date, setDate] = useState<string | null>(null);
+  const presetService =
+    initialServiceId !== undefined &&
+    services.some((item) => item.id === initialServiceId)
+      ? initialServiceId
+      : null;
+  const [step, setStep] = useState(presetService === null ? 0 : 1);
+  const [serviceId, setServiceId] = useState<string | null>(presetService);
+  const [date, setDate] = useState<string | null>(initialDate ?? null);
+  const [datePage, setDatePage] = useState(0);
   const [slot, setSlot] = useState<SlotOption | null>(null);
-  const [slots, setSlots] = useState<readonly SlotOption[]>([]);
-  const [slotsMessage, setSlotsMessage] = useState("");
+  const [slots, setSlots] = useState<readonly SlotOption[]>(initialSlots);
+  const [slotsMessage, setSlotsMessage] = useState(initialSlotsMessage);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -61,6 +82,8 @@ export function BookingFlow({
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const slotsRequestRef = useRef(0);
   const [pending, startTransition] = useTransition();
   const [confirmation, setConfirmation] = useState<{
     serviceName: string;
@@ -81,33 +104,66 @@ export function BookingFlow({
     setSlotsMessage("");
   }
 
+  function loadSlotsFor(nextServiceId: string, nextDate: string) {
+    const requestId = slotsRequestRef.current + 1;
+    slotsRequestRef.current = requestId;
+    setDate(nextDate);
+    setSlot(null);
+    setSlots([]);
+    setSlotsMessage("");
+    setSlotsLoading(true);
+    void loadBookingSlotsAction(nextServiceId, nextDate)
+      .then((result) => {
+        if (requestId !== slotsRequestRef.current) {
+          return;
+        }
+        setSlotsLoading(false);
+        if (!result.ok) {
+          setSlots([]);
+          setSlotsMessage(result.message);
+          return;
+        }
+        setSlots(result.data);
+        setSlotsMessage(
+          result.data.length === 0
+            ? "No times are open on this day. Try another date."
+            : "",
+        );
+      })
+      .catch(() => {
+        if (requestId !== slotsRequestRef.current) {
+          return;
+        }
+        setSlotsLoading(false);
+        setSlots([]);
+        setSlotsMessage("We could not load times. Try another date.");
+      });
+  }
+
   function selectService(id: string) {
     setServiceId(id);
-    resetSchedule();
     setFormError("");
+    const firstDate = openDates.find((item) => item.bookable);
+    if (firstDate === undefined) {
+      resetSchedule();
+      setDatePage(0);
+      setStep(1);
+      return;
+    }
+    setDatePage(0);
+    loadSlotsFor(id, firstDate.date);
+    setStep(1);
   }
 
   function selectDate(nextDate: string) {
     if (serviceId === null) {
       return;
     }
-    setDate(nextDate);
-    setSlot(null);
-    setSlotsMessage("");
-    startTransition(async () => {
-      const result = await loadBookingSlotsAction(serviceId, nextDate);
-      if (!result.ok) {
-        setSlots([]);
-        setSlotsMessage(result.message);
-        return;
-      }
-      setSlots(result.data);
-      setSlotsMessage(
-        result.data.length === 0
-          ? "No times are open on this day. Try another date."
-          : "",
-      );
-    });
+    const option = openDates.find((item) => item.date === nextDate);
+    if (option === undefined || !option.bookable) {
+      return;
+    }
+    loadSlotsFor(serviceId, nextDate);
   }
 
   function validateDetails(): boolean {
@@ -165,6 +221,7 @@ export function BookingFlow({
         return rest;
       });
       setPhoneVerified(true);
+      setStep(3);
     });
   }
 
@@ -212,6 +269,13 @@ export function BookingFlow({
     );
   }
 
+  const timeHint =
+    date === null
+      ? "Pick a date to see open times."
+      : slot === null && slots.length > 0
+        ? "Pick a time to continue."
+        : "";
+
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-20">
       <p className="text-xs tracking-[0.28em] text-ink/60 uppercase">Book</p>
@@ -222,7 +286,7 @@ export function BookingFlow({
         Choose a service, pick an open time, and we’ll confirm your appointment.
       </p>
       <div className="mt-8">
-        <BookingStepIndicator steps={STEPS} current={step} />
+        <BookingStepIndicator steps={STEPS} current={step} onSelect={setStep} />
       </div>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
@@ -234,28 +298,28 @@ export function BookingFlow({
           ) : null}
 
           {step === 0 ? (
-            <fieldset>
-              <legend className="font-display text-2xl text-ink">
+            <div>
+              <h2 className="font-display text-2xl text-ink">
                 Choose a service
-              </legend>
-              <div className="mt-6 divide-y divide-rose-line">
+              </h2>
+              <p className="mt-2 text-sm text-ink/60">
+                Tap a service to see available times.
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
                 {services.map((item) => {
                   const selected = item.id === serviceId;
                   return (
-                    <label
+                    <button
                       key={item.id}
-                      className={`flex w-full cursor-pointer flex-col gap-1 py-5 text-left ${
-                        selected ? "bg-blush/50 px-4" : "px-0"
+                      type="button"
+                      aria-pressed={selected}
+                      className={`flex w-full flex-col gap-1 border px-4 py-5 text-left touch-manipulation ${
+                        selected
+                          ? "border-ink bg-blush/70"
+                          : "border-rose-line bg-white"
                       }`}
+                      onClick={() => selectService(item.id)}
                     >
-                      <input
-                        type="radio"
-                        name="service"
-                        className="sr-only"
-                        checked={selected}
-                        onChange={() => selectService(item.id)}
-                        value={item.id}
-                      />
                       <span className="flex items-baseline justify-between gap-4">
                         <span className="text-lg text-ink">{item.name}</span>
                         <span className="text-lg text-ink">
@@ -267,24 +331,19 @@ export function BookingFlow({
                           {item.shortDescription}
                         </span>
                       ) : null}
-                      <span className="text-xs tracking-wide text-ink/50 uppercase">
-                        {formatDurationMinutes(item.durationMinutes)}
+                      <span className="mt-2 flex items-center justify-between gap-3 text-xs tracking-wide text-ink/50 uppercase">
+                        <span>
+                          {formatDurationMinutes(item.durationMinutes)}
+                        </span>
+                        <span className="tracking-[0.16em] text-ink">
+                          Select
+                        </span>
                       </span>
-                    </label>
+                    </button>
                   );
                 })}
               </div>
-              <div className="mt-8">
-                <button
-                  type="button"
-                  className="btn-primary"
-                  disabled={serviceId === null}
-                  onClick={() => setStep(1)}
-                >
-                  Continue
-                </button>
-              </div>
-            </fieldset>
+            </div>
           ) : null}
 
           {step === 1 ? (
@@ -293,75 +352,53 @@ export function BookingFlow({
                 Choose a date and time
               </h2>
               <p className="mt-2 text-sm text-ink/60">
-                Times are shown in the studio timezone.
+                Open studio hours only.
                 <span className="sr-only"> {timezone}</span>
               </p>
-              {openDates.length === 0 ? (
+              {openDates.every((item) => !item.bookable) ? (
                 <p className="mt-6 text-sm text-ink/65">
                   No booking dates are open right now.
                 </p>
               ) : (
-                <fieldset className="mt-6 flex gap-2 overflow-x-auto pb-2">
-                  <legend className="sr-only">Date</legend>
-                  {openDates.map((item) => {
-                    const selected = item.date === date;
-                    return (
-                      <label
-                        key={item.date}
-                        className={`min-w-28 shrink-0 cursor-pointer border px-3 py-3 text-left text-sm ${
-                          selected
-                            ? "border-ink bg-blush/60"
-                            : "border-rose-line bg-white"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="booking-date"
-                          className="sr-only"
-                          checked={selected}
-                          value={item.date}
-                          onChange={() => selectDate(item.date)}
-                        />
-                        {item.label}
-                      </label>
-                    );
-                  })}
-                </fieldset>
+                <BookingDatePager
+                  dates={openDates}
+                  selectedDate={date}
+                  page={datePage}
+                  onPageChange={setDatePage}
+                  onSelect={selectDate}
+                />
               )}
               <div className="mt-8" aria-live="polite">
-                {pending && date !== null ? (
+                {slotsLoading ? (
                   <p className="text-sm text-ink/60">Loading times…</p>
                 ) : null}
                 {slotsMessage.length > 0 ? (
                   <p className="text-sm text-ink/65">{slotsMessage}</p>
                 ) : null}
+                {timeHint.length > 0 && slotsMessage.length === 0 ? (
+                  <p className="mb-3 text-sm text-ink/60">{timeHint}</p>
+                ) : null}
                 {slots.length > 0 ? (
-                  <fieldset className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                    <legend className="sr-only">Time</legend>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {slots.map((item) => {
                       const selected = item.startsAt === slot?.startsAt;
                       return (
-                        <label
+                        <button
                           key={item.startsAt}
-                          className={`cursor-pointer px-3 py-3 text-center text-sm ${
+                          type="button"
+                          aria-pressed={selected}
+                          className={`px-3 py-3 text-sm ${
                             selected
                               ? "bg-ink text-cream"
                               : "border border-rose-line bg-white text-ink"
                           }`}
+                          onClick={() => setSlot(item)}
                         >
-                          <input
-                            type="radio"
-                            name="booking-time"
-                            className="sr-only"
-                            checked={selected}
-                            value={item.startsAt}
-                            onChange={() => setSlot(item)}
-                          />
                           {item.timeLabel}
-                        </label>
+                        </button>
                       );
                     })}
-                  </fieldset>
+                  </div>
                 ) : null}
               </div>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -401,6 +438,9 @@ export function BookingFlow({
               }}
             >
               <h2 className="font-display text-2xl text-ink">Your details</h2>
+              <p className="text-sm text-ink/60">
+                We’ll text a short code to confirm it’s you.
+              </p>
               <div>
                 <label htmlFor="booking-name" className="text-sm text-ink">
                   Name
@@ -470,12 +510,13 @@ export function BookingFlow({
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
+                  placeholder="0501234567"
                   value={phone}
                   aria-invalid={fieldErrors.phone !== undefined}
                   aria-describedby={
                     fieldErrors.phone !== undefined
                       ? "booking-phone-error"
-                      : undefined
+                      : "booking-phone-hint"
                   }
                   onChange={(event) => {
                     setPhone(event.target.value);
@@ -492,7 +533,14 @@ export function BookingFlow({
                   >
                     {fieldErrors.phone}
                   </p>
-                ) : null}
+                ) : (
+                  <p
+                    id="booking-phone-hint"
+                    className="mt-1 text-sm text-ink/50"
+                  >
+                    Israeli mobile numbers work with or without +972.
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="booking-note" className="text-sm text-ink">
@@ -537,7 +585,7 @@ export function BookingFlow({
                     aria-describedby={
                       fieldErrors.code !== undefined
                         ? "booking-code-error"
-                        : undefined
+                        : "booking-code-hint"
                     }
                     onChange={(event) => setCode(event.target.value)}
                   />
@@ -549,7 +597,14 @@ export function BookingFlow({
                     >
                       {fieldErrors.code}
                     </p>
-                  ) : null}
+                  ) : (
+                    <p
+                      id="booking-code-hint"
+                      className="mt-1 text-sm text-ink/50"
+                    >
+                      Enter the code we sent, then continue.
+                    </p>
+                  )}
                 </div>
               ) : null}
               {phoneVerified ? (
@@ -571,9 +626,23 @@ export function BookingFlow({
                   {phoneVerified
                     ? "Continue"
                     : codeSent
-                      ? "Verify"
-                      : "Send code"}
+                      ? pending
+                        ? "Verifying…"
+                        : "Verify"
+                      : pending
+                        ? "Sending…"
+                        : "Send code"}
                 </button>
+                {codeSent && !phoneVerified ? (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={pending}
+                    onClick={sendCode}
+                  >
+                    Resend code
+                  </button>
+                ) : null}
               </div>
             </form>
           ) : null}
@@ -584,6 +653,17 @@ export function BookingFlow({
               <p className="mt-2 text-sm text-ink/65">
                 Confirm the service, time, and your details before booking.
               </p>
+              <div className="mt-6 max-w-md lg:hidden">
+                <BookingSummary
+                  service={service}
+                  dateLabel={dateLabel}
+                  timeLabel={timeLabel}
+                  displayName={displayName}
+                  email={email}
+                  phone={phone}
+                  note={note}
+                />
+              </div>
               <div className="mt-8 flex flex-wrap gap-3">
                 <button
                   type="button"
@@ -595,7 +675,7 @@ export function BookingFlow({
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={pending}
+                  disabled={pending || slot === null || !phoneVerified}
                   onClick={submitBooking}
                 >
                   {pending ? "Booking…" : "Confirm booking"}
@@ -604,7 +684,13 @@ export function BookingFlow({
             </div>
           ) : null}
         </div>
-        <div className="lg:sticky lg:top-24">
+        <div
+          className={
+            step === 3
+              ? "hidden lg:sticky lg:top-24 lg:block"
+              : "lg:sticky lg:top-24"
+          }
+        >
           <BookingSummary
             service={service}
             dateLabel={dateLabel}

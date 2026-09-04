@@ -12,4 +12,5 @@ export type Customers = {
   getById(id: CustomerId): Promise<Customer | null>;
   getOrCreateByPhone(phoneE164: string): Promise<Customer>;
   updateContact(id: CustomerId, contact: CustomerContact): Promise<Customer>;
+  updatePhone(id: CustomerId, phoneE164: string): Promise<Customer>;
 };

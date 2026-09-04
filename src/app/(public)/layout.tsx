@@ -25,6 +25,7 @@ export default async function PublicLayout({
         studioName={studio.studioName}
         locationLabel={studio.locationLabel}
         instagramUrl={studio.instagramUrl}
+        year={new Date().getFullYear()}
       />
     </>
   );

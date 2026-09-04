@@ -4,7 +4,9 @@ Assume input is hostile. Validate every untrusted value on the server (phone, ID
 
 Authorize every privileged operation on the server. Hiding a button is not authorization.
 
-Keep secrets server-side. `NEXT_PUBLIC_*` is only for values the browser may see. Never use the service-role key or Twilio in the browser.
+Keep secrets server-side. `NEXT_PUBLIC_*` is only for values the browser may see. Never use the service-role key, Twilio, `ADMIN_PASSWORD`, or `ADMIN_JWT_SECRET` in the browser.
+
+Admin auth: username/password on the server, then an HS256 JWT in an httpOnly cookie. Verify that JWT in `requireAdmin()` before any admin mutation. Do not put the JWT in `localStorage` or return it to client JavaScript.
 
 Never trust IDs, prices, or availability from the browser.
 

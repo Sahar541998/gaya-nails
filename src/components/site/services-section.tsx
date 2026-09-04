@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { formatDurationMinutes, formatIlsFromCents } from "@/lib/money";
 import type { Service } from "@/types/domain";
 
@@ -21,29 +23,31 @@ export function ServicesSection({ services }: ServicesSectionProps) {
       ) : (
         <ul className="mt-10 divide-y divide-rose-line">
           {services.map((service) => (
-            <li
-              key={service.id}
-              className="grid grid-cols-1 gap-2 py-6 md:grid-cols-[1fr_auto] md:items-baseline"
-            >
-              <div>
-                <div className="flex flex-wrap items-baseline justify-between gap-3 md:block">
-                  <h3 className="text-lg text-ink">{service.name}</h3>
-                  <p className="text-lg text-ink md:hidden">
-                    {formatIlsFromCents(service.priceCents)}
+            <li key={service.id}>
+              <Link
+                href={`/book?service=${service.id}`}
+                className="grid grid-cols-1 gap-2 py-6 md:grid-cols-[1fr_auto] md:items-baseline"
+              >
+                <div>
+                  <div className="flex flex-wrap items-baseline justify-between gap-3 md:block">
+                    <h3 className="text-lg text-ink">{service.name}</h3>
+                    <p className="text-lg text-ink md:hidden">
+                      {formatIlsFromCents(service.priceCents)}
+                    </p>
+                  </div>
+                  {service.shortDescription.length > 0 ? (
+                    <p className="mt-1 text-sm leading-6 text-ink/65">
+                      {service.shortDescription}
+                    </p>
+                  ) : null}
+                  <p className="mt-1 text-xs tracking-wide text-ink/50 uppercase">
+                    {formatDurationMinutes(service.durationMinutes)}
                   </p>
                 </div>
-                {service.shortDescription.length > 0 ? (
-                  <p className="mt-1 text-sm leading-6 text-ink/65">
-                    {service.shortDescription}
-                  </p>
-                ) : null}
-                <p className="mt-1 text-xs tracking-wide text-ink/50 uppercase">
-                  {formatDurationMinutes(service.durationMinutes)}
+                <p className="hidden text-lg text-ink md:block">
+                  {formatIlsFromCents(service.priceCents)}
                 </p>
-              </div>
-              <p className="hidden text-lg text-ink md:block">
-                {formatIlsFromCents(service.priceCents)}
-              </p>
+              </Link>
             </li>
           ))}
         </ul>

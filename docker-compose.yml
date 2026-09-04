@@ -40,6 +40,9 @@ services:
       DATABASE_URL: postgres://gaya:gaya@postgres:5432/gaya_nails
       SMS_DRIVER: docker
       SMS_MOCK_URL: http://sms:4010
+      ADMIN_USERNAME: gaya
+      ADMIN_PASSWORD: gaya-local
+      ADMIN_JWT_SECRET: local-dev-only-change-me
     command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
     volumes:
       - .:/app

@@ -4,15 +4,15 @@ type SiteFooterProps = {
   studioName: string;
   locationLabel: string;
   instagramUrl: string;
+  year: number;
 };
 
 export function SiteFooter({
   studioName,
   locationLabel,
   instagramUrl,
+  year,
 }: SiteFooterProps) {
-  const year = new Date().getFullYear();
-
   return (
     <footer className="border-t border-rose-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 md:flex-row md:items-end md:justify-between md:px-8">

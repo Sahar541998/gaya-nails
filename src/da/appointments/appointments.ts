@@ -18,6 +18,16 @@ export type CreateAppointmentRecord = {
   note: string;
 };
 
+export type UpdateAppointmentRecord = {
+  customerId: CustomerId;
+  serviceId: ServiceId;
+  startsAt: string;
+  endsAt: string;
+  serviceNameAtBooking: string;
+  priceCentsAtBooking: number;
+  note: string;
+};
+
 export type Appointments = {
   getById(id: AppointmentId): Promise<Appointment | null>;
   listInRange(
@@ -37,5 +47,9 @@ export type Appointments = {
     id: AppointmentId,
     startsAt: string,
     endsAt: string,
+  ): Promise<Appointment>;
+  updateDetails(
+    id: AppointmentId,
+    input: UpdateAppointmentRecord,
   ): Promise<Appointment>;
 };

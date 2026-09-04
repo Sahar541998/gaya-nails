@@ -19,6 +19,7 @@ export type Service = {
   priceCents: number;
   isActive: boolean;
   shortDescription: string;
+  sortOrder: number;
 };
 
 export type AppointmentStatus = "confirmed" | "cancelled" | "completed";
@@ -65,6 +66,7 @@ export type BlockedTime = {
   id: BlockedTimeId;
   startsAt: string;
   endsAt: string;
+  note: string;
 };
 
 export type BookingSession = {

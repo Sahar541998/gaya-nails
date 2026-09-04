@@ -20,6 +20,7 @@ export default defineConfig({
       DATABASE_URL: "postgres://gaya:gaya@localhost:5432/gaya_nails",
       SMS_DRIVER: "docker",
       SMS_MOCK_URL: "http://localhost:4010",
+      ADMIN_TEST_BYPASS: "1",
     },
   },
 });

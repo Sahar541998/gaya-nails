@@ -153,15 +153,110 @@ export function formatTimeHm(iso: string, timeZone: string): string {
   return value.toFormat("HH:mm");
 }
 
-export function formatDateLong(isoOrDate: string, timeZone: string): string {
+function zonedDateFromInput(
+  isoOrDate: string,
+  timeZone: string,
+): DateTime | null {
   const fromDate = parseLocalDate(isoOrDate, timeZone);
   const value =
     fromDate ??
     DateTime.fromISO(isoOrDate, { setZone: true }).setZone(timeZone);
   if (!value.isValid) {
+    return null;
+  }
+  return value;
+}
+
+export function toDateTimeLocalInput(iso: string, timeZone: string): string {
+  const value = DateTime.fromISO(iso, { setZone: true }).setZone(timeZone);
+  if (!value.isValid) {
+    return "";
+  }
+  return value.toFormat("yyyy-MM-dd'T'HH:mm");
+}
+
+export function formatDateLong(isoOrDate: string, timeZone: string): string {
+  const value = zonedDateFromInput(isoOrDate, timeZone);
+  if (value === null) {
     return isoOrDate;
   }
   return value.toFormat("ccc d LLL yyyy");
+}
+
+export type DateChipLabels = {
+  weekdayLabel: string;
+  dayLabel: string;
+  monthLabel: string;
+};
+
+export function formatDateChip(
+  isoOrDate: string,
+  timeZone: string,
+): DateChipLabels {
+  const value = zonedDateFromInput(isoOrDate, timeZone);
+  if (value === null) {
+    return {
+      weekdayLabel: isoOrDate,
+      dayLabel: "",
+      monthLabel: "",
+    };
+  }
+  return {
+    weekdayLabel: value.toFormat("ccc"),
+    dayLabel: value.toFormat("d"),
+    monthLabel: value.toFormat("LLL"),
+  };
+}
+
+export type LocalCalendarDay = {
+  date: string;
+  bookable: boolean;
+};
+
+function isLocalDayBookable(
+  day: DateTime,
+  weeklyHours: WeeklyHours,
+  timeZone: string,
+  nowZoned: DateTime,
+): boolean {
+  const hours = weeklyHours[weekdayKey(day, timeZone)];
+  if (hours === undefined) {
+    return false;
+  }
+  const closeHm = parseHm(hours.close);
+  if (closeHm === null) {
+    return false;
+  }
+  const close = zonedDateTime(
+    {
+      year: day.year,
+      month: day.month,
+      day: day.day,
+      hour: closeHm.hour,
+      minute: closeHm.minute,
+    },
+    timeZone,
+  );
+  return close !== null && close > nowZoned;
+}
+
+export function listLocalDateWindow(
+  weeklyHours: WeeklyHours,
+  timeZone: string,
+  now: Date,
+  dayCount: number,
+): readonly LocalCalendarDay[] {
+  const nowZoned = DateTime.fromJSDate(now, { zone: timeZone });
+  const start = nowZoned.startOf("day");
+  const dates: LocalCalendarDay[] = [];
+  for (let offset = 0; offset < dayCount; offset += 1) {
+    const day = start.plus({ days: offset });
+    dates.push({
+      date: day.toFormat("yyyy-MM-dd"),
+      bookable: isLocalDayBookable(day, weeklyHours, timeZone, nowZoned),
+    });
+  }
+  return dates;
 }
 
 export function listOpenLocalDates(
@@ -170,14 +265,7 @@ export function listOpenLocalDates(
   now: Date,
   dayCount: number,
 ): readonly string[] {
-  const start = DateTime.fromJSDate(now, { zone: timeZone }).startOf("day");
-  const dates: string[] = [];
-  for (let offset = 0; offset < dayCount; offset += 1) {
-    const day = start.plus({ days: offset });
-    if (weeklyHours[weekdayKey(day, timeZone)] === undefined) {
-      continue;
-    }
-    dates.push(day.toFormat("yyyy-MM-dd"));
-  }
-  return dates;
+  return listLocalDateWindow(weeklyHours, timeZone, now, dayCount)
+    .filter((day) => day.bookable)
+    .map((day) => day.date);
 }

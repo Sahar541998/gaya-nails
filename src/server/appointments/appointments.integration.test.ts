@@ -162,7 +162,11 @@ describe("appointment domain", () => {
 
   it("rejects a slot overlapping a blocked time", async () => {
     const serviceId = await insertService({ durationMinutes: 60 });
-    const block = await da.blockedTimes.create(localStart(10), localStart(12));
+    const block = await da.blockedTimes.create({
+      startsAt: localStart(10),
+      endsAt: localStart(12),
+      note: "",
+    });
     createdBlockIds.push(block.id);
     const { token } = await verifiedCustomer();
     const created = await createAppointment({

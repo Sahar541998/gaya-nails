@@ -1,6 +1,10 @@
 import "server-only";
 
-import { formatDateLong, listOpenLocalDates } from "@/lib/business-time";
+import {
+  formatDateChip,
+  formatDateLong,
+  listLocalDateWindow,
+} from "@/lib/business-time";
 import { getDataAccess } from "@/da";
 import { listServices } from "@/server/services/services";
 import type { Service } from "@/types/domain";
@@ -9,6 +13,10 @@ import { ok, type Result } from "@/types/result";
 export type BookableDate = {
   date: string;
   label: string;
+  weekdayLabel: string;
+  dayLabel: string;
+  monthLabel: string;
+  bookable: boolean;
 };
 
 export type BookingPageData = {
@@ -27,7 +35,7 @@ export async function getBookingPageData(
   ]);
 
   const services = servicesResult.ok ? servicesResult.data : [];
-  const dates = listOpenLocalDates(
+  const dates = listLocalDateWindow(
     settings.weeklyHours,
     settings.timezone,
     now,
@@ -38,9 +46,11 @@ export async function getBookingPageData(
     timezone: settings.timezone,
     bookingEnabled: settings.bookingEnabled,
     services,
-    openDates: dates.map((date) => ({
-      date,
-      label: formatDateLong(date, settings.timezone),
+    openDates: dates.map((day) => ({
+      date: day.date,
+      label: formatDateLong(day.date, settings.timezone),
+      ...formatDateChip(day.date, settings.timezone),
+      bookable: day.bookable,
     })),
   });
 }

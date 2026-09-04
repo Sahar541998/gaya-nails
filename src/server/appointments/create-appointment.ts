@@ -95,6 +95,7 @@ export async function createAppointment(
     endsAtIso,
     settings,
     now,
+    requireBookingEnabled: actor.data.role !== "admin",
   });
   if (!window.ok) {
     return window;
