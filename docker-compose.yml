@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gaya-nails-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: gaya
+      POSTGRES_PASSWORD: gaya
+      POSTGRES_DB: gaya_nails
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./supabase/migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gaya -d gaya_nails"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sms-mock:
+    build:
+      context: ./docker/sms-mock
+    container_name: gaya-nails-sms-mock
+    restart: unless-stopped
+    ports:
+      - "4010:4010"
+    environment:
+      PORT: "4010"
+      MOCK_CODE: "000000"
+
+volumes:
+  postgres_data:
